@@ -21,6 +21,8 @@ static int g_selection_len = 0;
 
 #define GRID_LEN 16
 
+#define KMOD_MASK 0x0FFF
+
 static unsigned short keymod = 0;
 int g_pause = 0;
 
@@ -156,7 +158,7 @@ void game_Draw (double delta)
 void game_OnKeydown (void *event)
 {
 	SDL_KeyboardEvent *e = (SDL_KeyboardEvent *)event;
-	keymod = e->keysym.mod;
+	keymod = e->keysym.mod & KMOD_MASK;
 	/* TODO: add camera acceration */
 	/* TODO: allow oblique camera movement */
 	switch (e->keysym.sym) {
@@ -178,11 +180,20 @@ void game_OnKeydown (void *event)
 void game_OnKeyup (void *event)
 {
 	SDL_KeyboardEvent *e = (SDL_KeyboardEvent *)event;
-	keymod = e->keysym.mod;
+	keymod = e->keysym.mod & KMOD_MASK;
 
 	switch (e->keysym.sym) {
 	case SDLK_SPACE:
 		g_pause = !g_pause;
+		break;
+	case SDLK_s:
+		if (keymod == KMOD_NONE) {
+			int i;
+			for (i = 0; i < g_selection_len; i++) {
+				struct unit *u = &g_unit[g_selection[i]];
+				u->flags &= ~UNIT_MOVING;
+			}
+		}
 		break;
 	}
 }
