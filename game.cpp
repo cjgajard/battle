@@ -22,6 +22,7 @@ static int g_selection_len = 0;
 #define GRID_LEN 16
 
 static unsigned short keymod = 0;
+int g_pause = 0;
 
 int game_Init (void)
 {
@@ -81,6 +82,9 @@ void game_Close (void)
 void game_Update (void)
 {
 	int i, j;
+	if (g_pause) {
+		return;
+	}
 	for (i = 0; i < g_unit_len; i++) {
 		struct point m;
 		struct unit *u;
@@ -118,7 +122,7 @@ void game_Draw (double delta)
 	int i;
 
 	SDL_SetRenderDrawBlendMode(d_renderer, SDL_BLENDMODE_NONE);
-	SDL_SetRenderDrawColor(d_renderer, 0, 0, 0, 0xFF);
+	draw_SetColor(0, 0, 0, 0xFF);
 	SDL_RenderClear(d_renderer);
 
 	for (i = 0; i <= GRID_LEN; i++) {
@@ -128,7 +132,7 @@ void game_Draw (double delta)
 		a.y = 0;
 		a = point_Add(point_MultiplyProj(a, PROJ), ORIGIN);
 		b = point_Add(point_MultiplyProj(b, PROJ), ORIGIN);
-		SDL_SetRenderDrawColor(d_renderer, 0x40, 0x40, 0x40, 0xFF);
+		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
 	for (i = 0; i <= GRID_LEN; i++) {
@@ -138,7 +142,7 @@ void game_Draw (double delta)
 		a.x = 0;
 		a = point_Add(point_MultiplyProj(a, PROJ), ORIGIN);
 		b = point_Add(point_MultiplyProj(b, PROJ), ORIGIN);
-		SDL_SetRenderDrawColor(d_renderer, 0x40, 0x40, 0x40, 0xFF);
+		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
 
@@ -175,6 +179,12 @@ void game_OnKeyup (void *event)
 {
 	SDL_KeyboardEvent *e = (SDL_KeyboardEvent *)event;
 	keymod = e->keysym.mod;
+
+	switch (e->keysym.sym) {
+	case SDLK_SPACE:
+		g_pause = !g_pause;
+		break;
+	}
 }
 
 void game_OnClick (void *event)

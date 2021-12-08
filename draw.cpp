@@ -78,3 +78,12 @@ struct point point_MultiplyProj (struct point that, struct projection p)
 	out.y = that.x * p.x.y + that.y * p.y.y;
 	return out;
 }
+
+void draw_SetColor (int r, int g, int b, int a)
+{
+	if (!g_pause) {
+		SDL_SetRenderDrawColor(d_renderer, r, g, b, a);
+		return;
+	}
+	SDL_SetRenderDrawColor(d_renderer, 0xFF - r, 0xFF - g, 0xFF - b, a);
+}

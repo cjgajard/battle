@@ -37,7 +37,7 @@ void unit_Draw (struct unit *that)
 	{
 		SDL_Rect img;
 		unit_SpriteRect(that, &img);
-		SDL_SetRenderDrawColor(d_renderer, 0x80, 0x80, 0x80, 0xFF);
+		draw_SetColor(0x80, 0x80, 0x80, 0xFF);
 		SDL_RenderDrawRect(d_renderer, &img);
 	}
 	/* collision-hitbox */
@@ -50,6 +50,11 @@ void unit_Draw (struct unit *that)
 		} else {
 			r = b = 0xFF;
 		}
+		if (g_pause) {
+			r = 255 - r;
+			g = 255 - g;
+			b = 255 - b;
+		}
 
 		p.x = that->col.x;
 		p.y = that->col.y;
@@ -61,7 +66,7 @@ void unit_Draw (struct unit *that)
 		siz.x = that->col.r * tmp.x;
 		tmp = point_MultiplyProj(PROJ.y, PROJ);
 		siz.y = that->col.r * tmp.y;
-		SDL_SetRenderDrawColor(d_renderer, r, g, b, 0xFF);
+		draw_SetColor(r, g, b, 0xFF);
 		aaellipseRGBA(d_renderer, p.x, p.y, siz.x, siz.y, r, g, b, 0xFF);
 	}
 	/* direction */
@@ -80,7 +85,7 @@ void unit_Draw (struct unit *that)
 		end.y = that->pos.y + that->col.r * sin(that->dir);
 		end = point_Add(point_MultiplyProj(end, PROJ), ORIGIN);
 
-		SDL_SetRenderDrawColor(d_renderer, r, g, b, 0xFF);
+		draw_SetColor(r, g, b, 0xFF);
 		SDL_RenderDrawLine(d_renderer, start.x, start.y, end.x, end.y);
 	}
 }
