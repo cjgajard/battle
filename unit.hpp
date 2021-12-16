@@ -1,5 +1,5 @@
 #pragma once
-#include "config.hpp"
+#include "geography.hpp"
 
 struct sprite {
 	int x, y;
@@ -8,6 +8,7 @@ struct sprite {
 
 struct unit {
 	double dir, maxspd;
+	double maxturnspd;
 	unsigned long id;
 	struct point pos;
 	struct point tar;
@@ -27,6 +28,10 @@ struct unit {
 	void Close (void);
 	void Draw (void);
 	void Init (unsigned long id);
-	void Move (struct point d);
+	void Move (struct point v);
+	void Turn (double delta);
+	void Update (void);
+
+	double TurnStep (struct point target);
 	struct point MoveStep ();
 };

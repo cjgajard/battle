@@ -1,5 +1,4 @@
-#ifndef DRAW_H
-#define DRAW_H
+#pragma once
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
 #include "config.hpp"
@@ -12,4 +11,3 @@ int draw_Init (void);
 void draw_Close (void);
 void draw_Update (void);
 void draw_SetColor (int r, int g, int b, int a);
-#endif

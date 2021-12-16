@@ -1,4 +1,5 @@
 #include "config.hpp"
+#include "geography.hpp"
 #include "draw.hpp"
 #include "game.hpp"
 #include "unit.hpp"
@@ -62,6 +63,7 @@ int game_Init (void)
 
 		u->dir = -M_PI / 2;
 		u->maxspd = 0.2;
+		u->maxturnspd = M_PI / 128;
 
 		u->flags = unit::ALIVE;
 
@@ -83,39 +85,11 @@ void game_Close (void)
 
 void game_Update (void)
 {
-	int i, j;
 	if (g_pause) {
 		return;
 	}
-	for (i = 0; i < g_unit_len; i++) {
-		struct point m;
-		struct unit *u;
-		u = &g_unit[i];
-		if (!(u->flags & unit::ALIVE)) {
-			continue;
-		}
-		if (!(u->flags & unit::MOVING)) {
-			continue;
-		}
-		m = u->MoveStep();
-		/* TODO: avoid checking collision between the same pair of
-		 * units twice */
-		for (j = 0; j < g_unit_len; j++) {
-			struct unit *u2;
-			if (i == j) {
-				continue;
-			}
-			u2 = &g_unit[j];
-			if (!(u2->flags & unit::ALIVE)) {
-				continue;
-			}
-			if (u->Collision(u2, m)) {
-				u->flags &= ~unit::MOVING;
-			}
-		}
-		if (u->flags & unit::MOVING) {
-			u->Move(m);
-		}
+	for (int i = 0; i < g_unit_len; i++) {
+		g_unit[i].Update();
 	}
 }
 
@@ -227,6 +201,35 @@ void game_OnRelease (void *event)
 			}
 		}
 		break;
+	}
+}
+
+void unit::Update ()
+{
+	if (!(this->flags & unit::ALIVE)) {
+		return;
+	}
+	if (!(this->flags & unit::MOVING)) {
+		return;
+	}
+	struct point m = this->MoveStep();
+	/* TODO: avoid checking collision between the same pair of
+	 * units twice */
+	for (int j = 0; j < g_unit_len; j++) {
+		struct unit *u = &g_unit[j];
+		if (this == u) {
+			continue;
+		}
+		if (!(u->flags & unit::ALIVE)) {
+			continue;
+		}
+		if (this->Collision(u, m)) {
+			this->flags &= ~unit::MOVING;
+		}
+	}
+	if (this->flags & unit::MOVING) {
+		this->Turn(this->TurnStep(m));
+		this->Move(m);
 	}
 }
 

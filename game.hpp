@@ -1,6 +1,4 @@
-#ifndef GAME_H
-#define GAME_H
-
+#pragma once
 int game_Init (void);
 void game_Close (void);
 void game_Update (void);
@@ -16,4 +14,3 @@ void game_OnRelease (void *event);
 /* extern int g_unit_size; */
 /* extern int g_unit_len; */
 /* extern unsigned long g_unit_id; */
-#endif

@@ -1,7 +1,19 @@
 #include "unit.hpp"
 #include "draw.hpp"
-static void unit_SpriteRect (struct unit *that, SDL_Rect *dst);
-static struct point unit_Projection (struct unit *that);
+
+static struct point unit_Projection (struct unit *that)
+{
+	return that->pos * PROJ + ORIGIN;
+}
+
+static void unit_SpriteRect (struct unit *that, SDL_Rect *dst)
+{
+	struct point p = unit_Projection(that);
+	dst->x = p.x - that->spr.w / 2 + that->spr.x;
+	dst->y = p.y - that->spr.h / 2 + that->spr.y;
+	dst->w = that->spr.w;
+	dst->h = that->spr.h;
+}
 
 bool circle::Collision (struct circle *c)
 {
@@ -26,24 +38,11 @@ bool unit::Collision (struct unit *u, struct point m)
 	return c.Collision(&c2);
 }
 
-void unit::Init (unsigned long id)
+bool unit::UnderCursor (int x, int y)
 {
-	this->id = id;
-	this->pos.x = 0;
-	this->pos.y = 0;
-
-	this->spr.x = 0;
-	this->spr.y = -16;
-	this->spr.w = 32;
-	this->spr.h = 48;
-
-	this->maxspd = 1.0;
-
-	this->body.x = 0;
-	this->body.y = 0;
-	this->body.r = 8;
-
-	this->flags = unit::ALIVE;
+	SDL_Rect r;
+	unit_SpriteRect(this, &r);
+	return (x >= r.x && x < r.x+r.w) && (y >= r.y && y < r.y+r.h);
 }
 
 void unit::Close ()
@@ -113,25 +112,57 @@ void unit::Draw ()
 	}
 }
 
-static struct point unit_Projection (struct unit *that)
+void unit::Init (unsigned long id)
 {
-	return that->pos * PROJ + ORIGIN;
+	this->id = id;
+	this->pos.x = 0;
+	this->pos.y = 0;
+
+	this->spr.x = 0;
+	this->spr.y = -16;
+	this->spr.w = 32;
+	this->spr.h = 48;
+
+	this->maxspd = 1.0;
+	this->maxturnspd = M_PI / 128;
+
+	this->body.x = 0;
+	this->body.y = 0;
+	this->body.r = 8;
+
+	this->flags = unit::ALIVE;
 }
 
-static void unit_SpriteRect (struct unit *that, SDL_Rect *dst)
+void unit::Move (struct point v)
 {
-	struct point p = unit_Projection(that);
-	dst->x = p.x - that->spr.w / 2 + that->spr.x;
-	dst->y = p.y - that->spr.h / 2 + that->spr.y;
-	dst->w = that->spr.w;
-	dst->h = that->spr.h;
+	if (!v.x || !v.y) {
+		this->flags &= ~unit::MOVING;
+		return;
+	}
+	this->pos.x += v.x;
+	this->pos.y += v.y;
 }
 
-bool unit::UnderCursor (int x, int y)
+void unit::Turn (double delta)
 {
-	SDL_Rect r;
-	unit_SpriteRect(this, &r);
-	return (x >= r.x && x < r.x+r.w) && (y >= r.y && y < r.y+r.h);
+	double dir = this->dir + delta;
+	if (dir < 0)
+		dir += 2 * M_PI;
+	if (dir > 2 * M_PI)
+		dir -= 2 * M_PI;
+	this->dir = dir;
+}
+
+double unit::TurnStep (struct point v)
+{
+	angle_t a = angle_t(v) - angle_t(this->dir);
+	if (a.a > this->maxturnspd) {
+		a = angle_t(this->maxturnspd);
+	}
+	if (a.a < -this->maxturnspd) {
+		a = angle_t(-this->maxturnspd);
+	}
+	return a.a;
 }
 
 struct point unit::MoveStep ()
@@ -143,15 +174,4 @@ struct point unit::MoveStep ()
 		d.y *= this->maxspd / av;
 	}
 	return d;
-}
-
-void unit::Move (struct point d)
-{
-	if (!d.x || !d.y) {
-		this->flags &= ~unit::MOVING;
-		return;
-	}
-	this->dir = atan2(d.y, d.x);
-	this->pos.x += d.x;
-	this->pos.y += d.y;
 }
