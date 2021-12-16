@@ -37,7 +37,7 @@ int game_Init (void)
 	for (i = 0; i < unit_count; i++) {
 		unsigned long id = g_unit_id++;
 		struct unit *u = &g_unit[id];
-		unit_Init(u, id);
+		u->Init(id);
 		g_unit_len++;
 		u->pos.x = (i % GRID_LEN) * TILESIZ + TILESIZ / 2;
 		u->pos.y = (i / GRID_LEN) * TILESIZ + TILESIZ / 2;
@@ -56,14 +56,14 @@ int game_Init (void)
 		u->spr.w = 100;
 		u->spr.h = 100;
 
-		u->col.x = 0;
-		u->col.y = 0;
-		u->col.r = 32;
+		u->body.x = 0;
+		u->body.y = 0;
+		u->body.r = 32;
 
 		u->dir = -M_PI / 2;
 		u->maxspd = 0.2;
 
-		u->flags = UNIT_ALIVE;
+		u->flags = unit::ALIVE;
 
 		g_unit_len++;
 	}
@@ -76,7 +76,7 @@ void game_Close (void)
 	for (i = 0; i < g_unit_len; i++) {
 		struct unit *u;
 		u = &g_unit[i];
-		unit_Close(u);
+		u->Close();
 	}
 	free(g_unit);
 }
@@ -91,13 +91,13 @@ void game_Update (void)
 		struct point m;
 		struct unit *u;
 		u = &g_unit[i];
-		if (!(u->flags & UNIT_ALIVE)) {
+		if (!(u->flags & unit::ALIVE)) {
 			continue;
 		}
-		if (!(u->flags & UNIT_MOVING)) {
+		if (!(u->flags & unit::MOVING)) {
 			continue;
 		}
-		unit_NextMove(u, &m);
+		m = u->MoveStep();
 		/* TODO: avoid checking collision between the same pair of
 		 * units twice */
 		for (j = 0; j < g_unit_len; j++) {
@@ -106,15 +106,15 @@ void game_Update (void)
 				continue;
 			}
 			u2 = &g_unit[j];
-			if (!(u2->flags & UNIT_ALIVE)) {
+			if (!(u2->flags & unit::ALIVE)) {
 				continue;
 			}
-			if (unit_IsCollision(u, u2, m)) {
-				u->flags &= ~UNIT_MOVING;
+			if (u->Collision(u2, m)) {
+				u->flags &= ~unit::MOVING;
 			}
 		}
-		if (u->flags & UNIT_MOVING) {
-			unit_Move(u, m);
+		if (u->flags & unit::MOVING) {
+			u->Move(m);
 		}
 	}
 }
@@ -149,7 +149,7 @@ void game_Draw (double delta)
 	}
 
 	for (i = 0; i < g_unit_len; i++) {
-		unit_Draw(&g_unit[i]);
+		g_unit[i].Draw();
 	}
 
 	SDL_RenderPresent(d_renderer);
@@ -191,7 +191,7 @@ void game_OnKeyup (void *event)
 			int i;
 			for (i = 0; i < g_selection_len; i++) {
 				struct unit *u = &g_unit[g_selection[i]];
-				u->flags &= ~UNIT_MOVING;
+				u->flags &= ~unit::MOVING;
 			}
 		}
 		break;
@@ -223,7 +223,7 @@ void game_OnRelease (void *event)
 				/* TODO: find a path to target before moving */
 				p = projection_XY(e->x, e->y);
 				u->tar = p;
-				u->flags |= UNIT_MOVING;
+				u->flags |= unit::MOVING;
 			}
 		}
 		break;
@@ -244,7 +244,7 @@ static struct unit *game_UnitAt (int x, int y)
 	/* TODO: that search should be in a list sorted by Y position */
 	for (i = 0; i < g_unit_len; i++) {
 		struct unit *u = &g_unit[i];
-		if (unit_IsUnderCursor(u, x, y)) {
+		if (u->UnderCursor(x, y)) {
 			return u;
 		}
 	}
@@ -261,7 +261,7 @@ static void unit_Deselect (struct unit *that)
 			continue;
 		}
 		if (g_selection[i] == that->id) {
-			g_unit[that->id].flags &= ~UNIT_SELECTED;
+			g_unit[that->id].flags &= ~unit::SELECTED;
 			found = 1;
 		}
 	}
@@ -274,7 +274,7 @@ static void unit_DeselectAll (void)
 {
 	int i;
 	for (i = 0; i < g_selection_len; i++) {
-		g_unit[g_selection[i]].flags &= ~UNIT_SELECTED;
+		g_unit[g_selection[i]].flags &= ~unit::SELECTED;
 	}
 	g_selection_len = 0;
 }
@@ -287,7 +287,7 @@ static void unit_Select (struct unit *that)
 		return;
 	}
 	g_selection[g_selection_len++] = that->id;
-	that->flags |= UNIT_SELECTED;
+	that->flags |= unit::SELECTED;
 }
 
 /* NOTE: Safe to call with `that` equal to `NULL` */
@@ -296,7 +296,7 @@ static void unit_ToggleSelect (struct unit *that)
 	if (that == NULL) {
 		return;
 	}
-	if (that->flags & UNIT_SELECTED) {
+	if (that->flags & unit::SELECTED) {
 		unit_Deselect(that);
 		return;
 	}

@@ -3,40 +3,65 @@
 static void unit_SpriteRect (struct unit *that, SDL_Rect *dst);
 static struct point unit_Projection (struct unit *that);
 
-void unit_Init (struct unit *that, unsigned long id)
+bool circle::Collision (struct circle *c)
 {
-	that->id = id;
-	that->pos.x = 0;
-	that->pos.y = 0;
-
-	that->spr.x = 0;
-	that->spr.y = -16;
-	that->spr.w = 32;
-	that->spr.h = 48;
-
-	that->maxspd = 1.0;
-
-	that->col.x = 0;
-	that->col.y = 0;
-	that->col.r = 8;
-
-	that->flags = UNIT_ALIVE;
+	double dx, dy;
+	dx = this->x - c->x;
+	dy = this->y - c->y;
+	return sqrt(dx * dx + dy * dy) < this->r + c->r;
 }
 
-void unit_Close (struct unit *that)
+bool unit::Collision (struct unit *u, struct point m)
+{
+	struct circle c = {
+		this->pos.x + this->body.x + m.x,
+		this->pos.y + this->body.y + m.y,
+		this->body.r,
+	};
+
+	struct circle c2 = {
+		u->pos.x + u->body.x,
+		u->pos.y + u->body.y,
+		u->body.r,
+	};
+
+	return c.Collision(&c2);
+}
+
+void unit::Init (unsigned long id)
+{
+	this->id = id;
+	this->pos.x = 0;
+	this->pos.y = 0;
+
+	this->spr.x = 0;
+	this->spr.y = -16;
+	this->spr.w = 32;
+	this->spr.h = 48;
+
+	this->maxspd = 1.0;
+
+	this->body.x = 0;
+	this->body.y = 0;
+	this->body.r = 8;
+
+	this->flags = unit::ALIVE;
+}
+
+void unit::Close ()
 {
 }
 
-void unit_Draw (struct unit *that)
+void unit::Draw ()
 {
 	unsigned char r, g, b;
-	if (!(that->flags & UNIT_ALIVE)) {
+	if (!(this->flags & unit::ALIVE)) {
 		return;
 	}
 	/* sprite box */
 	{
 		SDL_Rect img;
-		unit_SpriteRect(that, &img);
+		unit_SpriteRect(this, &img);
 		draw_SetColor(0x80, 0x80, 0x80, 0xFF);
 		SDL_RenderDrawRect(d_renderer, &img);
 	}
@@ -45,7 +70,7 @@ void unit_Draw (struct unit *that)
 		struct point p, tmp, siz;
 
 		g = 0xFF;
-		if (that->flags & UNIT_SELECTED) {
+		if (this->flags & unit::SELECTED) {
 			r = b = 0;
 		} else {
 			r = b = 0xFF;
@@ -56,16 +81,16 @@ void unit_Draw (struct unit *that)
 			b = 255 - b;
 		}
 
-		p.x = that->col.x;
-		p.y = that->col.y;
-		p = point_Add(that->pos, p);
+		p.x = this->body.x;
+		p.y = this->body.y;
+		p = point_Add(this->pos, p);
 		p = point_Add(point_MultiplyProj(p, PROJ), ORIGIN);
 
 		/* TODO: understand reason of parameters of siz */
 		tmp = point_MultiplyProj(PROJ.x, PROJ);
-		siz.x = that->col.r * tmp.x;
+		siz.x = this->body.r * tmp.x;
 		tmp = point_MultiplyProj(PROJ.y, PROJ);
-		siz.y = that->col.r * tmp.y;
+		siz.y = this->body.r * tmp.y;
 		draw_SetColor(r, g, b, 0xFF);
 		aaellipseRGBA(d_renderer, p.x, p.y, siz.x, siz.y, r, g, b, 0xFF);
 	}
@@ -74,15 +99,15 @@ void unit_Draw (struct unit *that)
 		struct point start, end;
 
 		g = 0xFF;
-		if (that->flags & UNIT_SELECTED) {
+		if (this->flags & unit::SELECTED) {
 			r = b = 0;
 		} else {
 			r = b = 0xFF;
 		}
 
-		start = point_Add(point_MultiplyProj(that->pos, PROJ), ORIGIN);
-		end.x = that->pos.x + that->col.r * cos(that->dir);
-		end.y = that->pos.y + that->col.r * sin(that->dir);
+		start = point_Add(point_MultiplyProj(this->pos, PROJ), ORIGIN);
+		end.x = this->pos.x + this->body.r * cos(this->dir);
+		end.y = this->pos.y + this->body.r * sin(this->dir);
 		end = point_Add(point_MultiplyProj(end, PROJ), ORIGIN);
 
 		draw_SetColor(r, g, b, 0xFF);
@@ -104,40 +129,32 @@ static void unit_SpriteRect (struct unit *that, SDL_Rect *dst)
 	dst->h = that->spr.h;
 }
 
-int unit_IsUnderCursor (struct unit *that, int x, int y)
+int unit::IsUnderCursor (int x, int y)
 {
 	SDL_Rect r;
-	unit_SpriteRect(that, &r);
+	unit_SpriteRect(this, &r);
 	return (x >= r.x && x < r.x+r.w) && (y >= r.y && y < r.y+r.h);
 }
 
-void unit_NextMove (struct unit *that, struct point *d)
+void unit::NextMove (struct point *d)
 {
 	double av;
-	d->x = that->tar.x - that->pos.x;
-	d->y = that->tar.y - that->pos.y;
+	d->x = this->tar.x - this->pos.x;
+	d->y = this->tar.y - this->pos.y;
 	av = sqrt(d->x * d->x + d->y * d->y);
-	if (av > that->maxspd) {
-		d->x *= that->maxspd / av;
-		d->y *= that->maxspd / av;
+	if (av > this->maxspd) {
+		d->x *= this->maxspd / av;
+		d->y *= this->maxspd / av;
 	}
 }
 
-void unit_Move (struct unit *that, struct point d)
+void unit::Move (struct point d)
 {
 	if (!d.x || !d.y) {
-		that->flags &= ~UNIT_MOVING;
+		this->flags &= ~unit::MOVING;
 		return;
 	}
-	that->dir = atan2(d.y, d.x);
-	that->pos.x += d.x;
-	that->pos.y += d.y;
-}
-
-int unit_IsCollision (struct unit *that, struct unit *u, struct point d)
-{
-	double dx, dy;
-	dx = (that->pos.x + that->col.x + d.x) - (u->pos.x + u->col.x);
-	dy = (that->pos.y + that->col.y + d.y) - (u->pos.y + u->col.y);
-	return sqrt(dx * dx + dy * dy) < that->col.r + u->col.r;
+	this->dir = atan2(d.y, d.x);
+	this->pos.x += d.x;
+	this->pos.y += d.y;
 }

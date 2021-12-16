@@ -11,6 +11,7 @@ struct point {
 
 struct circle {
 	double x, y, r;
+	bool Collision (struct circle *c);
 };
 
 struct projection {

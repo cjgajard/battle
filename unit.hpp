@@ -1,5 +1,4 @@
-#ifndef UNIT_H
-#define UNIT_H
+#pragma once
 #include "config.hpp"
 
 struct sprite {
@@ -13,20 +12,21 @@ struct unit {
 	struct point pos;
 	struct point tar;
 	struct sprite spr;
-	struct circle col;
-	int flags;
+	struct circle body;
+	unsigned int flags;
+
+	enum {
+		ALIVE = (1 << 0),
+		HEROE = (1 << 1),
+		SELECTED = (1 << 2),
+		MOVING = (1 << 3),
+	};
+
+	bool Collision (struct unit *u, struct point d);
+	bool UnderCursor (int x, int y);
+	void Close (void);
+	void Draw (void);
+	void Init (unsigned long id);
+	void Move (struct point d);
+	struct point MoveStep ();
 };
-
-#define UNIT_ALIVE (1 << 0)
-#define UNIT_HEROE (1 << 1)
-#define UNIT_SELECTED (1 << 2)
-#define UNIT_MOVING (1 << 3)
-
-int unit_IsUnderCursor (struct unit *that, int x, int y);
-int unit_IsCollision (struct unit *that, struct unit *u, struct point d);
-void unit_Close (struct unit *that);
-void unit_Draw (struct unit *that);
-void unit_Init (struct unit *that, unsigned long id);
-void unit_Move (struct unit *that, struct point d);
-void unit_NextMove (struct unit *that, struct point *d);
-#endif
