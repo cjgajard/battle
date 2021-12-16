@@ -5,10 +5,8 @@ static struct point unit_Projection (struct unit *that);
 
 bool circle::Collision (struct circle *c)
 {
-	double dx, dy;
-	dx = this->x - c->x;
-	dy = this->y - c->y;
-	return sqrt(dx * dx + dy * dy) < this->r + c->r;
+	struct point d = (struct point)*this - (struct point)*c;
+	return +d < this->r + c->r;
 }
 
 bool unit::Collision (struct unit *u, struct point m)
@@ -83,13 +81,13 @@ void unit::Draw ()
 
 		p.x = this->body.x;
 		p.y = this->body.y;
-		p = point_Add(this->pos, p);
-		p = point_Add(point_MultiplyProj(p, PROJ), ORIGIN);
+		p = this->pos + p;
+		p = p * PROJ + ORIGIN;
 
 		/* TODO: understand reason of parameters of siz */
-		tmp = point_MultiplyProj(PROJ.x, PROJ);
+		tmp = PROJ.x * PROJ;
 		siz.x = this->body.r * tmp.x;
-		tmp = point_MultiplyProj(PROJ.y, PROJ);
+		tmp = PROJ.y * PROJ;
 		siz.y = this->body.r * tmp.y;
 		draw_SetColor(r, g, b, 0xFF);
 		aaellipseRGBA(d_renderer, p.x, p.y, siz.x, siz.y, r, g, b, 0xFF);
@@ -105,10 +103,10 @@ void unit::Draw ()
 			r = b = 0xFF;
 		}
 
-		start = point_Add(point_MultiplyProj(this->pos, PROJ), ORIGIN);
+		start = this->pos * PROJ + ORIGIN;
 		end.x = this->pos.x + this->body.r * cos(this->dir);
 		end.y = this->pos.y + this->body.r * sin(this->dir);
-		end = point_Add(point_MultiplyProj(end, PROJ), ORIGIN);
+		end = end * PROJ + ORIGIN;
 
 		draw_SetColor(r, g, b, 0xFF);
 		SDL_RenderDrawLine(d_renderer, start.x, start.y, end.x, end.y);
@@ -117,7 +115,7 @@ void unit::Draw ()
 
 static struct point unit_Projection (struct unit *that)
 {
-	return point_Add(point_MultiplyProj(that->pos, PROJ), ORIGIN);
+	return that->pos * PROJ + ORIGIN;
 }
 
 static void unit_SpriteRect (struct unit *that, SDL_Rect *dst)
@@ -129,23 +127,22 @@ static void unit_SpriteRect (struct unit *that, SDL_Rect *dst)
 	dst->h = that->spr.h;
 }
 
-int unit::IsUnderCursor (int x, int y)
+bool unit::UnderCursor (int x, int y)
 {
 	SDL_Rect r;
 	unit_SpriteRect(this, &r);
 	return (x >= r.x && x < r.x+r.w) && (y >= r.y && y < r.y+r.h);
 }
 
-void unit::NextMove (struct point *d)
+struct point unit::MoveStep ()
 {
-	double av;
-	d->x = this->tar.x - this->pos.x;
-	d->y = this->tar.y - this->pos.y;
-	av = sqrt(d->x * d->x + d->y * d->y);
+	struct point d = this->tar - this->pos;
+	double av = +d;
 	if (av > this->maxspd) {
-		d->x *= this->maxspd / av;
-		d->y *= this->maxspd / av;
+		d.x *= this->maxspd / av;
+		d.y *= this->maxspd / av;
 	}
+	return d;
 }
 
 void unit::Move (struct point d)

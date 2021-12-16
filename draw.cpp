@@ -57,26 +57,40 @@ void draw_Close (void)
 	SDL_Quit();
 }
 
-struct point point_Add (struct point that, struct point p)
+double point::operator+ ()
 {
-	that.x += p.x;
-	that.y += p.y;
-	return that;
+	return sqrt(this->x * this->x + this->y * this->y);
 }
 
-struct point point_Sub (struct point that, struct point p)
+struct point point::operator+ (struct point p)
 {
-	that.x -= p.x;
-	that.y -= p.y;
-	return that;
+	struct point dst;
+	dst.x = this->x + p.x;
+	dst.y = this->y + p.y;
+	return dst;
 }
 
-struct point point_MultiplyProj (struct point that, struct projection p)
+struct point point::operator- (struct point p)
+{
+	struct point dst;
+	dst.x = this->x - p.x;
+	dst.y = this->y - p.y;
+	return dst;
+}
+
+struct point point::operator* (struct projection p)
 {
 	struct point out;
-	out.x = that.x * p.x.x + that.y * p.y.x;
-	out.y = that.x * p.x.y + that.y * p.y.y;
+	out.x = this->x * p.x.x + this->y * p.y.x;
+	out.y = this->x * p.x.y + this->y * p.y.y;
 	return out;
+}
+
+circle::operator point() {
+	struct point dst;
+	dst.x = this->x;
+	dst.y = this->y;
+	return dst;
 }
 
 void draw_SetColor (int r, int g, int b, int a)

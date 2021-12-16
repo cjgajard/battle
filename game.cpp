@@ -132,8 +132,8 @@ void game_Draw (double delta)
 		a.x = b.x = i * TILESIZ;
 		b.y = GRID_LEN * TILESIZ;
 		a.y = 0;
-		a = point_Add(point_MultiplyProj(a, PROJ), ORIGIN);
-		b = point_Add(point_MultiplyProj(b, PROJ), ORIGIN);
+		a = a * PROJ + ORIGIN;
+		b = b * PROJ + ORIGIN;
 		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
@@ -142,8 +142,8 @@ void game_Draw (double delta)
 		a.y = b.y = i * TILESIZ;
 		b.x = GRID_LEN * TILESIZ;
 		a.x = 0;
-		a = point_Add(point_MultiplyProj(a, PROJ), ORIGIN);
-		b = point_Add(point_MultiplyProj(b, PROJ), ORIGIN);
+		a = a * PROJ + ORIGIN;
+		b = b * PROJ + ORIGIN;
 		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
@@ -235,7 +235,7 @@ static struct point projection_XY (int x, int y)
 	struct point tmp;
 	tmp.x = x - ORIGIN.x;
 	tmp.y = y - ORIGIN.y;
-	return point_MultiplyProj(tmp, PROJ_INV);
+	return tmp * PROJ_INV;
 }
 
 static struct unit *game_UnitAt (int x, int y)
