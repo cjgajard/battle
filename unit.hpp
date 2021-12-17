@@ -29,6 +29,7 @@ struct unit {
 	void Draw (void);
 	void Init (unsigned long id);
 	void Update (void);
+	struct unit *ClosestEnemy (void);
 
 	void Move (struct point v);
 	struct point MoveStep ();

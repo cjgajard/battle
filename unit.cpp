@@ -131,7 +131,7 @@ void unit::Init (unsigned long id)
 	this->body.y = 0;
 	this->body.r = 8;
 
-	this->flags = unit::ALIVE;
+	this->flags = unit::HERO | unit::ALIVE;
 }
 
 void unit::Update ()
@@ -140,6 +140,10 @@ void unit::Update ()
 		return;
 	}
 	if (!(this->flags & unit::MOVING)) {
+		struct unit *u = this->ClosestEnemy();
+		if (u != NULL) {
+			this->Turn(this->TurnStep(u->pos - this->pos));
+		}
 		return;
 	}
 	struct point m = this->MoveStep();
@@ -155,12 +159,11 @@ void unit::Update ()
 		}
 		if (this->Collision(u, m)) {
 			this->flags &= ~unit::MOVING;
+			return;
 		}
 	}
-	if (this->flags & unit::MOVING) {
-		this->Turn(this->TurnStep(m));
-		this->Move(m);
-	}
+	this->Turn(this->TurnStep(m));
+	this->Move(m);
 }
 
 void unit::Move (struct point v)
@@ -252,4 +255,28 @@ void unit::ToggleSelect ()
 		return;
 	}
 	this->Select();
+}
+
+struct unit *unit::ClosestEnemy ()
+{
+	struct unit *current = NULL;
+	double min = 0;
+	for (int i = 0; i < g_unit_len; i++) {
+		struct unit *u = &g_unit[i];
+		if (this == u) {
+			continue;
+		}
+		if (!(u->flags & unit::ALIVE)) {
+			continue;
+		}
+		if (!((this->flags & unit::HERO) ^ (u->flags & unit::HERO))) {
+			continue;
+		}
+		double d = abs(+(u->pos - this->pos));
+		if (current == NULL || d < min) {
+			min = d;
+			current = u;
+		}
+	}
+	return current;
 }
