@@ -134,6 +134,35 @@ void unit::Init (unsigned long id)
 	this->flags = unit::ALIVE;
 }
 
+void unit::Update ()
+{
+	if (!(this->flags & unit::ALIVE)) {
+		return;
+	}
+	if (!(this->flags & unit::MOVING)) {
+		return;
+	}
+	struct point m = this->MoveStep();
+	/* TODO: avoid checking collision between the same pair of
+	 * units twice */
+	for (int j = 0; j < g_unit_len; j++) {
+		struct unit *u = &g_unit[j];
+		if (this == u) {
+			continue;
+		}
+		if (!(u->flags & unit::ALIVE)) {
+			continue;
+		}
+		if (this->Collision(u, m)) {
+			this->flags &= ~unit::MOVING;
+		}
+	}
+	if (this->flags & unit::MOVING) {
+		this->Turn(this->TurnStep(m));
+		this->Move(m);
+	}
+}
+
 void unit::Move (struct point v)
 {
 	if (!v.x || !v.y) {

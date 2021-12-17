@@ -7,18 +7,18 @@ struct sprite {
 };
 
 struct unit {
+	unsigned long id;
+	unsigned int flags;
 	double dir, maxspd;
 	double maxturnspd;
-	unsigned long id;
 	struct point pos;
 	struct point tar;
 	struct sprite spr;
 	struct circle body;
-	unsigned int flags;
 
 	enum {
-		ALIVE = (1 << 0),
-		HEROE = (1 << 1),
+		HERO = (1 << 0),
+		ALIVE = (1 << 1),
 		SELECTED = (1 << 2),
 		MOVING = (1 << 3),
 	};
@@ -28,12 +28,13 @@ struct unit {
 	void Close (void);
 	void Draw (void);
 	void Init (unsigned long id);
-	void Move (struct point v);
-	void Turn (double delta);
 	void Update (void);
 
-	double TurnStep (struct point target);
+	void Move (struct point v);
 	struct point MoveStep ();
+
+	void Turn (double delta);
+	double TurnStep (struct point target);
 
 	void Deselect (void);
 	void Select (void);
