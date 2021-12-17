@@ -1,5 +1,5 @@
 #pragma once
-#include "geography.hpp"
+#include "geometry.hpp"
 
 struct sprite {
 	int x, y;
