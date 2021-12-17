@@ -1,31 +1,15 @@
 #include "config.hpp"
-#include "geometry.hpp"
 #include "draw.hpp"
 #include "game.hpp"
+#include "geometry.hpp"
+#include "state.hpp"
 #include "unit.hpp"
 
 static struct unit *game_UnitAt (int x, int y);
 static struct point projection_XY (int x, int y);
-static void unit_Deselect (struct unit *that);
-static void unit_DeselectAll (void);
-static void unit_Select (struct unit *that);
-static void unit_ToggleSelect (struct unit *that);
-
-#define G_UNIT_INITSIZ 256
-static struct unit *g_unit;
-static int g_unit_size, g_unit_len;
-static unsigned long g_unit_id = 0;
-
-#define G_SELECTION_SIZE 8
-static unsigned long g_selection[G_SELECTION_SIZE] = {0};
-static int g_selection_len = 0;
-
-#define GRID_LEN 16
 
 #define KMOD_MASK 0x0FFF
-
 static unsigned short keymod = 0;
-int g_pause = 0;
 
 int game_Init (void)
 {
@@ -181,10 +165,15 @@ void game_OnRelease (void *event)
 	SDL_MouseButtonEvent *e = (SDL_MouseButtonEvent *)event;
 	switch (e->button) {
 	case SDL_BUTTON_LEFT:
-		if (!(keymod & KMOD_CTRL)) {
-			unit_DeselectAll();
+		{
+			if (!(keymod & KMOD_CTRL)) {
+				unit::DeselectAll();
+			}
+			struct unit *u = game_UnitAt(e->x, e->y);
+			if (u != NULL) {
+				u->ToggleSelect();
+			}
 		}
-		unit_ToggleSelect(game_UnitAt(e->x, e->y));
 		break;
 	case SDL_BUTTON_RIGHT:
 		{
@@ -252,56 +241,4 @@ static struct unit *game_UnitAt (int x, int y)
 		}
 	}
 	return NULL;
-}
-
-static void unit_Deselect (struct unit *that)
-{
-	int i, found;
-	for (i = 0, found = 0; i < g_selection_len; i++) {
-		if (found) {
-			/* found cannot be true with i=0 */
-			g_selection[i - 1] = g_selection[i];
-			continue;
-		}
-		if (g_selection[i] == that->id) {
-			g_unit[that->id].flags &= ~unit::SELECTED;
-			found = 1;
-		}
-	}
-	if (found) {
-		g_selection_len--;
-	}
-}
-
-static void unit_DeselectAll (void)
-{
-	int i;
-	for (i = 0; i < g_selection_len; i++) {
-		g_unit[g_selection[i]].flags &= ~unit::SELECTED;
-	}
-	g_selection_len = 0;
-}
-
-static void unit_Select (struct unit *that)
-{
-	/* assumes unit is not already selected */
-	if (g_selection_len >= G_SELECTION_SIZE) {
-		fprintf(stderr, "max number of selection reached\n");
-		return;
-	}
-	g_selection[g_selection_len++] = that->id;
-	that->flags |= unit::SELECTED;
-}
-
-/* NOTE: Safe to call with `that` equal to `NULL` */
-static void unit_ToggleSelect (struct unit *that)
-{
-	if (that == NULL) {
-		return;
-	}
-	if (that->flags & unit::SELECTED) {
-		unit_Deselect(that);
-		return;
-	}
-	unit_Select(that);
 }

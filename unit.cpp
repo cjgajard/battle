@@ -1,5 +1,6 @@
-#include "unit.hpp"
 #include "draw.hpp"
+#include "state.hpp"
+#include "unit.hpp"
 
 static struct point unit_Projection (struct unit *that)
 {
@@ -174,4 +175,52 @@ struct point unit::MoveStep ()
 		d.y *= this->maxspd / av;
 	}
 	return d;
+}
+
+void unit::Deselect ()
+{
+	int i, found;
+	for (i = 0, found = 0; i < g_selection_len; i++) {
+		if (found) {
+			/* found cannot be true with i=0 */
+			g_selection[i - 1] = g_selection[i];
+			continue;
+		}
+		if (g_selection[i] == this->id) {
+			g_unit[this->id].flags &= ~unit::SELECTED;
+			found = 1;
+		}
+	}
+	if (found) {
+		g_selection_len--;
+	}
+}
+
+void unit::DeselectAll (void)
+{
+	int i;
+	for (i = 0; i < g_selection_len; i++) {
+		g_unit[g_selection[i]].flags &= ~unit::SELECTED;
+	}
+	g_selection_len = 0;
+}
+
+void unit::Select ()
+{
+	/* assumes unit is not already selected */
+	if (g_selection_len >= G_SELECTION_SIZE) {
+		fprintf(stderr, "max number of selection reached\n");
+		return;
+	}
+	g_selection[g_selection_len++] = this->id;
+	this->flags |= unit::SELECTED;
+}
+
+void unit::ToggleSelect ()
+{
+	if (this->flags & unit::SELECTED) {
+		this->Deselect();
+		return;
+	}
+	this->Select();
 }

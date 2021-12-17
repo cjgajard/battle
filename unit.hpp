@@ -34,4 +34,9 @@ struct unit {
 
 	double TurnStep (struct point target);
 	struct point MoveStep ();
+
+	void Deselect (void);
+	void Select (void);
+	void ToggleSelect (void);
+	static void DeselectAll (void);
 };
