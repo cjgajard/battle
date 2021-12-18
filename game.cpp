@@ -1,3 +1,4 @@
+#include "command.hpp"
 #include "config.hpp"
 #include "draw.hpp"
 #include "game.hpp"
@@ -20,7 +21,7 @@ int game_Init (void)
 
 	/* create heroes */
 	for (i = 0; i < unit_count; i++) {
-		unsigned long id = g_unit_id++;
+		unitid_t id = g_unit_id++;
 		struct unit *u = &g_unit[id];
 		u->Init(id);
 		g_unit_len++;
@@ -30,7 +31,7 @@ int game_Init (void)
 
 	/* create dragon */
 	{
-		unsigned long id = g_unit_id++;
+		unitid_t id = g_unit_id++;
 		struct unit *u = &g_unit[id];
 		u->id = id;
 		u->pos.x = GRID_LEN * TILESIZ / 2.0;
@@ -141,7 +142,7 @@ void game_OnKeyup (void *event)
 	keymod = e->keysym.mod & KMOD_MASK;
 
 	switch (e->keysym.sym) {
-	case SDLK_SPACE:
+	case SDLK_p:
 		g_pause = !g_pause;
 		break;
 	case SDLK_s:
@@ -149,7 +150,9 @@ void game_OnKeyup (void *event)
 			int i;
 			for (i = 0; i < g_selection_len; i++) {
 				struct unit *u = &g_unit[g_selection[i]];
-				u->flags &= ~unit::MOVING;
+				if (u != NULL) {
+					u->ClearCmd();
+				}
 			}
 		}
 		break;
@@ -179,14 +182,16 @@ void game_OnRelease (void *event)
 		{
 			int i;
 			for (i = 0; i < g_selection_len; i++) {
-				struct point p;
 				struct unit *u = &g_unit[g_selection[i]];
 				/* TODO: interact with map to get terrain
 				 * elevation */
 				/* TODO: find a path to target before moving */
-				p = projection_XY(e->x, e->y);
-				u->tar = p;
-				u->flags |= unit::MOVING;
+				if (u == NULL) {
+					continue;
+				}
+				u->ClearCmd();
+				struct point p = projection_XY(e->x, e->y);
+				u->PushCmd(new Move(u->id, p));
 			}
 		}
 		break;

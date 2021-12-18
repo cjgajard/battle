@@ -1,5 +1,6 @@
-#include "geometry.hpp"
 #include "draw.hpp"
+#include "geometry.hpp"
+#include "state.hpp"
 
 SDL_Renderer *d_renderer;
 SDL_Window *d_window;
@@ -16,14 +17,14 @@ int draw_Init (void)
 		"Title", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		g_width, g_height, SDL_WINDOW_SHOWN
 	);
-	if (!d_window) {
+	if (d_window == NULL) {
 		fprintf(stderr, "Window could not be created\n");
 		fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
 		return 2;
 	}
 
 	d_renderer = SDL_CreateRenderer(d_window, -1, SDL_RENDERER_ACCELERATED);
-	if (!d_renderer) {
+	if (d_renderer == NULL) {
 		fprintf(stderr, "Renderer could not be created\n");
 		fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError());
 		return 3;

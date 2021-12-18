@@ -13,56 +13,72 @@ struct projection PROJ_INV = {
 /* (1 | 0.5 | 1 ; 1 | -0.5 | 1; 0 | 1 | 1) */
 /* (1.5 | -0.5 | -1 ; 1 | -1 | 0; -1 | 1 | 1) */
 
-angle_t::angle_t(double a) {
-	this->a = a;
+angle_t::angle_t(double _a) {
+	a = _a;
 }
 
 angle_t::angle_t(struct point p) {
-	this->a = atan2(p.y, p.x);
+	a = atan2(p.y, p.x);
 }
 
 angle_t angle_t::operator- (angle_t that)
 {
-	double a = this->a - that.a;
-	if (a > -M_PI)
-		a -= 2 * M_PI;
-	if (a < -M_PI)
-		a += 2 * M_PI;
-	return angle_t(a);
+	double d = a - that.a;
+	if (d > -M_PI)
+		d -= 2 * M_PI;
+	if (d < -M_PI)
+		d += 2 * M_PI;
+	return angle_t(d);
 }
 
 double point::operator+ ()
 {
-	return sqrt(this->x * this->x + this->y * this->y);
+	return sqrt(x * x + y * y);
 }
 
 struct point point::operator+ (struct point p)
 {
 	struct point dst;
-	dst.x = this->x + p.x;
-	dst.y = this->y + p.y;
+	dst.x = x + p.x;
+	dst.y = y + p.y;
+	return dst;
+}
+
+struct point point::operator+= (struct point p)
+{
+	struct point dst;
+	x += p.x;
+	y += p.y;
 	return dst;
 }
 
 struct point point::operator- (struct point p)
 {
 	struct point dst;
-	dst.x = this->x - p.x;
-	dst.y = this->y - p.y;
+	dst.x = x - p.x;
+	dst.y = y - p.y;
+	return dst;
+}
+
+struct point point::operator-= (struct point p)
+{
+	struct point dst;
+	x -= p.x;
+	y -= p.y;
 	return dst;
 }
 
 struct point point::operator* (struct projection p)
 {
 	struct point out;
-	out.x = this->x * p.x.x + this->y * p.y.x;
-	out.y = this->x * p.x.y + this->y * p.y.y;
+	out.x = x * p.x.x + y * p.y.x;
+	out.y = x * p.x.y + y * p.y.y;
 	return out;
 }
 
 circle::operator point() {
 	struct point dst;
-	dst.x = this->x;
-	dst.y = this->y;
+	dst.x = x;
+	dst.y = y;
 	return dst;
 }

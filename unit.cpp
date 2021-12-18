@@ -19,15 +19,15 @@ static void unit_SpriteRect (struct unit *that, SDL_Rect *dst)
 bool circle::Collision (struct circle *c)
 {
 	struct point d = (struct point)*this - (struct point)*c;
-	return +d < this->r + c->r;
+	return +d < r + c->r;
 }
 
 bool unit::Collision (struct unit *u, struct point m)
 {
 	struct circle c = {
-		this->pos.x + this->body.x + m.x,
-		this->pos.y + this->body.y + m.y,
-		this->body.r,
+		pos.x + body.x + m.x,
+		pos.y + body.y + m.y,
+		body.r,
 	};
 
 	struct circle c2 = {
@@ -53,7 +53,7 @@ void unit::Close ()
 void unit::Draw ()
 {
 	unsigned char r, g, b;
-	if (!(this->flags & unit::ALIVE)) {
+	if (!(flags & unit::ALIVE)) {
 		return;
 	}
 	/* sprite box */
@@ -68,7 +68,7 @@ void unit::Draw ()
 		struct point p, tmp, siz;
 
 		g = 0xFF;
-		if (this->flags & unit::SELECTED) {
+		if (flags & unit::SELECTED) {
 			r = b = 0;
 		} else {
 			r = b = 0xFF;
@@ -79,16 +79,16 @@ void unit::Draw ()
 			b = 255 - b;
 		}
 
-		p.x = this->body.x;
-		p.y = this->body.y;
-		p = this->pos + p;
+		p.x = body.x;
+		p.y = body.y;
+		p = pos + p;
 		p = p * PROJ + ORIGIN;
 
 		/* TODO: understand reason of parameters of siz */
 		tmp = PROJ.x * PROJ;
-		siz.x = this->body.r * tmp.x;
+		siz.x = body.r * tmp.x;
 		tmp = PROJ.y * PROJ;
-		siz.y = this->body.r * tmp.y;
+		siz.y = body.r * tmp.y;
 		draw_SetColor(r, g, b, 0xFF);
 		aaellipseRGBA(d_renderer, p.x, p.y, siz.x, siz.y, r, g, b, 0xFF);
 	}
@@ -97,15 +97,15 @@ void unit::Draw ()
 		struct point start, end;
 
 		g = 0xFF;
-		if (this->flags & unit::SELECTED) {
+		if (flags & unit::SELECTED) {
 			r = b = 0;
 		} else {
 			r = b = 0xFF;
 		}
 
-		start = this->pos * PROJ + ORIGIN;
-		end.x = this->pos.x + this->body.r * cos(this->dir);
-		end.y = this->pos.y + this->body.r * sin(this->dir);
+		start = pos * PROJ + ORIGIN;
+		end.x = pos.x + body.r * cos(dir);
+		end.y = pos.y + body.r * sin(dir);
 		end = end * PROJ + ORIGIN;
 
 		draw_SetColor(r, g, b, 0xFF);
@@ -113,114 +113,99 @@ void unit::Draw ()
 	}
 }
 
-void unit::Init (unsigned long id)
+void unit::Init (unitid_t _id)
 {
-	this->id = id;
-	this->pos.x = 0;
-	this->pos.y = 0;
+	id = _id;
+	pos.x = 0;
+	pos.y = 0;
 
-	this->spr.x = 0;
-	this->spr.y = -16;
-	this->spr.w = 32;
-	this->spr.h = 48;
+	spr.x = 0;
+	spr.y = -16;
+	spr.w = 32;
+	spr.h = 48;
 
-	this->maxspd = 1.0;
-	this->maxturnspd = M_PI / 128;
+	maxspd = 1.0;
+	maxturnspd = M_PI / 128;
 
-	this->body.x = 0;
-	this->body.y = 0;
-	this->body.r = 8;
+	body.x = 0;
+	body.y = 0;
+	body.r = 8;
 
-	this->flags = unit::HERO | unit::ALIVE;
+	flags = unit::HERO | unit::ALIVE;
 }
 
 void unit::Update ()
 {
-	if (!(this->flags & unit::ALIVE)) {
+	if (!(flags & unit::ALIVE)) {
 		return;
 	}
-	if (!(this->flags & unit::MOVING)) {
-		struct unit *u = this->ClosestEnemy();
+	Command *c = Cmd();
+	if (c != NULL) {
+		if (c->Next()) {
+			c->Apply();
+		} else {
+			c->End();
+			PopCmd();
+		}
+	}
+	if (!(flags & unit::ACTIVE)) {
+		struct unit *u = ClosestEnemy();
 		if (u != NULL) {
-			this->Turn(this->TurnStep(u->pos - this->pos));
-		}
-		return;
-	}
-	struct point m = this->MoveStep();
-	/* TODO: avoid checking collision between the same pair of
-	 * units twice */
-	for (int j = 0; j < g_unit_len; j++) {
-		struct unit *u = &g_unit[j];
-		if (this == u) {
-			continue;
-		}
-		if (!(u->flags & unit::ALIVE)) {
-			continue;
-		}
-		if (this->Collision(u, m)) {
-			this->flags &= ~unit::MOVING;
-			return;
+			Turn(TurnNext(u->pos - pos));
 		}
 	}
-	this->Turn(this->TurnStep(m));
-	this->Move(m);
 }
 
-void unit::Move (struct point v)
+void unit::Move (struct point mv)
 {
-	if (!v.x || !v.y) {
-		this->flags &= ~unit::MOVING;
-		return;
-	}
-	this->pos.x += v.x;
-	this->pos.y += v.y;
+	pos += mv;
 }
 
-void unit::Turn (double delta)
+struct point unit::MoveNext (struct point t)
 {
-	double dir = this->dir + delta;
-	if (dir < 0)
-		dir += 2 * M_PI;
-	if (dir > 2 * M_PI)
-		dir -= 2 * M_PI;
-	this->dir = dir;
-}
-
-double unit::TurnStep (struct point v)
-{
-	angle_t a = angle_t(v) - angle_t(this->dir);
-	if (a.a > this->maxturnspd) {
-		a = angle_t(this->maxturnspd);
-	}
-	if (a.a < -this->maxturnspd) {
-		a = angle_t(-this->maxturnspd);
-	}
-	return a.a;
-}
-
-struct point unit::MoveStep ()
-{
-	struct point d = this->tar - this->pos;
+	struct point d = t - pos;
 	double av = +d;
-	if (av > this->maxspd) {
-		d.x *= this->maxspd / av;
-		d.y *= this->maxspd / av;
+	if (av > maxspd) {
+		d.x *= maxspd / av;
+		d.y *= maxspd / av;
 	}
 	return d;
 }
 
+void unit::Turn (angle_t delta)
+{
+	double d = dir + delta.a;
+	if (d < 0)
+		d += 2 * M_PI;
+	if (d > 2 * M_PI)
+		d -= 2 * M_PI;
+	dir = d;
+}
+
+angle_t unit::TurnNext (struct point v)
+{
+	angle_t a = angle_t(v) - angle_t(dir);
+	if (a.a > maxturnspd) {
+		a.a = maxturnspd;
+	}
+	if (a.a < -maxturnspd) {
+		a.a = -maxturnspd;
+	}
+	return a;
+}
+
 void unit::Deselect ()
 {
-	int i, found;
-	for (i = 0, found = 0; i < g_selection_len; i++) {
+	bool found = false;
+	for (int i = 0; i < g_selection_len; i++) {
 		if (found) {
 			/* found cannot be true with i=0 */
 			g_selection[i - 1] = g_selection[i];
 			continue;
 		}
-		if (g_selection[i] == this->id) {
-			g_unit[this->id].flags &= ~unit::SELECTED;
-			found = 1;
+		if (g_selection[i] == id) {
+			g_unit[id].flags &= ~unit::SELECTED;
+			found = true;
 		}
 	}
 	if (found) {
@@ -244,17 +229,17 @@ void unit::Select ()
 		fprintf(stderr, "max number of selection reached\n");
 		return;
 	}
-	g_selection[g_selection_len++] = this->id;
-	this->flags |= unit::SELECTED;
+	g_selection[g_selection_len++] = id;
+	flags |= unit::SELECTED;
 }
 
 void unit::ToggleSelect ()
 {
-	if (this->flags & unit::SELECTED) {
-		this->Deselect();
+	if (flags & unit::SELECTED) {
+		Deselect();
 		return;
 	}
-	this->Select();
+	Select();
 }
 
 struct unit *unit::ClosestEnemy ()
@@ -269,14 +254,53 @@ struct unit *unit::ClosestEnemy ()
 		if (!(u->flags & unit::ALIVE)) {
 			continue;
 		}
-		if (!((this->flags & unit::HERO) ^ (u->flags & unit::HERO))) {
+		if (!((flags & unit::HERO) ^ (u->flags & unit::HERO))) {
 			continue;
 		}
-		double d = abs(+(u->pos - this->pos));
+		double d = abs(+(u->pos - pos));
 		if (current == NULL || d < min) {
 			min = d;
 			current = u;
 		}
 	}
 	return current;
+}
+
+Command *unit::Cmd (void)
+{
+	if (cmd_len > 0 && cmd_len <= unit_CMD_SIZ) {
+		return cmd[cmd_len - 1];
+	}
+	return NULL;
+}
+
+void unit::PushCmd (Command *c)
+{
+	if (cmd_len >= unit_CMD_SIZ) {
+		return;
+	}
+	cmd[cmd_len++] = c;
+}
+
+void unit::PopCmd (void)
+{
+	if (cmd_len == 0) {
+		return;
+	}
+	Command *c = cmd[0];
+	delete c;
+	cmd_len--;
+}
+
+void unit::ClearCmd (void)
+{
+	// Command *c;
+	// while ((c = Cmd()) != NULL)
+	while (cmd_len > 0) {
+		Command *c = Cmd();
+		if (c != NULL) {
+			c->Halt();
+		}
+		PopCmd();
+	}
 }

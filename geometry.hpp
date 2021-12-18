@@ -2,6 +2,7 @@
 struct angle_t {
 	double a;
 
+	angle_t() {}
 	angle_t(double n);
 	angle_t(struct point p);
 	angle_t operator- (angle_t a);
@@ -12,7 +13,9 @@ struct point {
 
 	double operator+ ();
 	struct point operator+ (struct point p);
+	struct point operator+= (struct point p);
 	struct point operator- (struct point p);
+	struct point operator-= (struct point p);
 	struct point operator* (struct projection p);
 	operator angle_t();
 };
