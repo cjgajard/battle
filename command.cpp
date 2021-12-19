@@ -13,7 +13,7 @@ inline bool isZero (struct point p)
 	return isZero(p.x) && isZero(p.y);
 }
 
-bool Move::Next ()
+bool move::Next ()
 {
 	struct unit *u = &g_unit[uid];
 	struct point m = u->MoveNext(target);
@@ -40,7 +40,7 @@ bool Move::Next ()
 	return true;
 }
 
-void Move::Apply ()
+void move::Apply ()
 {
 	struct unit *u = &g_unit[uid];
 	u->flags |= unit::MOVING;
@@ -48,19 +48,19 @@ void Move::Apply ()
 	u->Move(mv);
 }
 
-void Move::Halt ()
+void move::Halt ()
 {
 	struct unit *u = &g_unit[uid];
 	u->flags &= ~unit::MOVING;
 }
 
-Move::Move (unitid_t _uid, struct point _tar)
+move::move (unitid_t _uid, struct point _tar)
 {
 	uid = _uid;
 	target = _tar;
 }
 
-bool Attack::Next (void)
+bool attack::Next (void)
 {
 	struct unit *u = &g_unit[uid];
 	struct unit *u2 = &g_unit[target];
@@ -81,7 +81,7 @@ bool Attack::Next (void)
 	return true;
 }
 
-void Attack::Apply (void)
+void attack::Apply (void)
 {
 	struct unit *u = &g_unit[uid];
 	struct unit *u2 = &g_unit[target];
@@ -103,14 +103,14 @@ void Attack::Apply (void)
 	}
 }
 
-void Attack::Halt (void)
+void attack::Halt (void)
 {
 	struct unit *u = &g_unit[uid];
 	u->flags &= ~unit::ATTACKING;
 	u->flags &= ~unit::MOVING;
 }
 
-Attack::Attack (unitid_t a, unitid_t b)
+attack::attack (unitid_t a, unitid_t b)
 {
 	uid = a;
 	target = b;

@@ -2,17 +2,17 @@
 #include "config.hpp"
 #include "geometry.hpp"
 
-struct Command {
+struct command {
 	// Next should calculate and save a delta in an private property in
 	// order to to Apply it after.
 	virtual bool Next (void) = 0;
 	virtual void Apply (void) = 0;
 	virtual void Halt (void) = 0;
 	virtual void End (void) { Halt(); }
-	virtual ~Command (void) = default;
+	virtual ~command (void) = default;
 };
 
-struct Move : public Command {
+struct move : public command {
 	unitid_t uid;
 	struct point target;
 	struct point mv;
@@ -21,20 +21,20 @@ struct Move : public Command {
 	bool Next (void) override;
 	void Apply (void) override;
 	void Halt (void) override;
-	Move (void) = default;
-	Move (unitid_t uid, struct point tar);
+	move (void) = default;
+	move (unitid_t uid, struct point tar);
 };
 
-struct Attack : public Command {
+struct attack : public command {
 	unitid_t uid;
 	unitid_t target;
 	unsigned int lastatktime;
 	bool outofrange;
-	Move mv;
+	struct move mv;
 
 	bool Next (void) override;
 	void Apply (void) override;
 	void Halt (void) override;
-	Attack (void) = default;
-	Attack (unitid_t uid, unitid_t target);
+	attack (void) = default;
+	attack (unitid_t uid, unitid_t target);
 };

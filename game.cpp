@@ -191,9 +191,9 @@ void game_OnRelease (void *event)
 				struct point p = projection_XY(e->x, e->y);
 				struct unit *u2 = game_UnitAt(e->x, e->y);
 				if (u2 == nullptr || u == u2) {
-					u->PushCmd(new Move(u->id, p));
+					u->PushCmd(new move(u->id, p));
 				} else {
-					u->PushCmd(new Attack(u->id, u2->id));
+					u->PushCmd(new attack(u->id, u2->id));
 				}
 			}
 		}

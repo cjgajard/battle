@@ -157,7 +157,7 @@ void unit::Update ()
 	if (!(flags & ALIVE)) {
 		return;
 	}
-	Command *c = Cmd();
+	struct command *c = Cmd();
 	if (c != nullptr) {
 		if (c->Next()) {
 			c->Apply();
@@ -295,7 +295,7 @@ struct unit *unit::ClosestEnemy ()
 	return current;
 }
 
-Command *unit::Cmd (void)
+struct command *unit::Cmd (void)
 {
 	if (cmd_len > 0 && cmd_len <= unit_CMD_SIZ) {
 		return cmd[cmd_len - 1];
@@ -303,7 +303,7 @@ Command *unit::Cmd (void)
 	return nullptr;
 }
 
-void unit::PushCmd (Command *c)
+void unit::PushCmd (struct command *c)
 {
 	if (cmd_len >= unit_CMD_SIZ) {
 		return;
@@ -316,7 +316,7 @@ void unit::PopCmd (void)
 	if (cmd_len == 0) {
 		return;
 	}
-	Command *c = cmd[0];
+	struct command *c = cmd[0];
 	delete c;
 	cmd_len--;
 }
@@ -324,7 +324,7 @@ void unit::PopCmd (void)
 void unit::ClearCmd (void)
 {
 	while (cmd_len > 0) {
-		Command *c = Cmd();
+		struct command *c = Cmd();
 		if (c != nullptr) {
 			c->Halt();
 		}

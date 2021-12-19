@@ -20,7 +20,7 @@ struct unit {
 	struct point pos;
 	struct sprite spr;
 	struct circle body;
-	Command *cmd[unit_CMD_SIZ];
+	struct command *cmd[unit_CMD_SIZ];
 	int cmd_len = 0;
 
 	unit ();
@@ -42,8 +42,8 @@ struct unit {
 	void ToggleSelect (void);
 	static void DeselectAll (void);
 
-	Command *Cmd (void);
-	void PushCmd (Command *c);
+	struct command *Cmd (void);
+	void PushCmd (struct command *c);
 	void PopCmd (void);
 	void ClearCmd (void);
 
