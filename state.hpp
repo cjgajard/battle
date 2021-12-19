@@ -3,6 +3,7 @@
 
 #define GRID_LEN 16
 extern bool g_pause;
+extern unsigned int g_time;
 
 #define G_UNIT_SIZ 256
 #define G_UNIT_INITSIZ 256

@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "draw.hpp"
 #include "game.hpp"
+#include "state.hpp"
 
 int g_width, g_height;
 int g_maxfps;
@@ -11,7 +12,7 @@ int g_running;
 
 int main (int argc, char *argv[])
 {
-	unsigned int g_time, g_lag;
+	unsigned int g_lag;
 	int err;
 
 	(void)argc;
