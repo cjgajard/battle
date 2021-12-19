@@ -16,7 +16,7 @@ inline bool isZero (struct point p)
 bool Move::Next ()
 {
 	struct unit *u = &g_unit[uid];
-	struct point m = u->MoveNext(tar);
+	struct point m = u->MoveNext(target);
 	if (isZero(m)) {
 		return false;
 	}
@@ -57,5 +57,77 @@ void Move::Halt ()
 Move::Move (unitid_t _uid, struct point _tar)
 {
 	uid = _uid;
-	tar = _tar;
+	target = _tar;
+}
+
+bool Attack::Next (void)
+{
+	struct unit *u = &g_unit[uid];
+	struct unit *u2 = &g_unit[target];
+	if (u == nullptr || u2 == nullptr) {
+		return false;
+	}
+	if (u == u2) {
+		return false;
+	}
+	if (!(u2->flags & unit::ALIVE)) {
+		return false;
+	}
+	double distance = +(u2->pos - u->pos) - u->body.r - u2->body.r;
+	if (distance >= u->atkrange) {
+		mv = u->MoveNext(u2->pos);
+		for (int j = 0; j < g_unit_len; j++) {
+			struct unit *u3 = &g_unit[j];
+			if (u == u3) {
+				continue;
+			}
+			if (!(u3->flags & unit::ALIVE)) {
+				continue;
+			}
+			if (u->Collision(u3, mv)) {
+				return false;
+			}
+		}
+	} else {
+		mv = {0, 0};
+	}
+	return true;
+}
+
+void Attack::Apply (void)
+{
+	struct unit *u = &g_unit[uid];
+	struct unit *u2 = &g_unit[target];
+	if (u == nullptr || u2 == nullptr) {
+		return;
+	}
+	if (isZero(mv)) {
+		if (g_time - lastatktime >= u->atkspd) {
+			u->flags |= unit::ATTACKING;
+			lastatktime = g_time;
+		}
+		if ((u->flags & unit::ATTACKING) && (g_time - lastatktime >= u->atkanimation)) {
+			u->Attack(u2);
+			u->flags &= ~unit::ATTACKING;
+		}
+	} else {
+		u->flags &= ~unit::ATTACKING;
+		u->flags |= unit::MOVING;
+		u->Move(mv);
+		u->Turn(u->TurnNext(mv));
+	}
+}
+
+void Attack::Halt (void)
+{
+	struct unit *u = &g_unit[uid];
+	u->flags &= ~unit::ATTACKING;
+	u->flags &= ~unit::MOVING;
+}
+
+Attack::Attack (unitid_t a, unitid_t b)
+{
+	uid = a;
+	target = b;
+	lastatktime = g_time;
 }

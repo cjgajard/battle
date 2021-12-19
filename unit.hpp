@@ -16,6 +16,7 @@ struct unit {
 	double dir, maxspd;
 	double maxturnspd;
 	double hp, maxhp;
+	double atkrange, atkspd, atkanimation, dmg;
 	struct point pos;
 	struct sprite spr;
 	struct circle body;
@@ -24,12 +25,13 @@ struct unit {
 	int cmd_len = 0;
 
 	enum {
-		HERO     = 1 << 0,
-		ALIVE    = 1 << 1,
-		SELECTED = 1 << 2,
-		MOVING   = 1 << 3,
+		HERO      = 1 << 0,
+		ALIVE     = 1 << 1,
+		SELECTED  = 1 << 2,
+		MOVING    = 1 << 3,
+		ATTACKING = 1 << 4,
 	};
-	static const int ACTIVE = MOVING;
+	static const int ACTIVE = MOVING | ATTACKING;
 
 	bool Collision (struct unit *u, struct point d);
 	bool UnderCursor (int x, int y);
@@ -44,6 +46,8 @@ struct unit {
 
 	void Turn (angle_t delta);
 	angle_t TurnNext (struct point t);
+
+	void Attack (struct unit *u);
 
 	void Deselect (void);
 	void Select (void);

@@ -51,6 +51,11 @@ int game_Init (void)
 		u->maxturnspd = M_PI / 128;
 
 		u->hp = u->maxhp = 400;
+		u->atkrange = 64;
+		u->atkspd = 1000;
+		u->atkanimation = 500;
+		u->dmg = 25;
+		u->cmd_len = 0;
 
 		u->flags = unit::ALIVE;
 
@@ -152,7 +157,7 @@ void game_OnKeyup (void *event)
 			int i;
 			for (i = 0; i < g_selection_len; i++) {
 				struct unit *u = &g_unit[g_selection[i]];
-				if (u != NULL) {
+				if (u != nullptr) {
 					u->ClearCmd();
 				}
 			}
@@ -175,7 +180,7 @@ void game_OnRelease (void *event)
 				unit::DeselectAll();
 			}
 			struct unit *u = game_UnitAt(e->x, e->y);
-			if (u != NULL) {
+			if (u != nullptr) {
 				u->ToggleSelect();
 			}
 		}
@@ -188,12 +193,17 @@ void game_OnRelease (void *event)
 				/* TODO: interact with map to get terrain
 				 * elevation */
 				/* TODO: find a path to target before moving */
-				if (u == NULL) {
+				if (u == nullptr) {
 					continue;
 				}
 				u->ClearCmd();
 				struct point p = projection_XY(e->x, e->y);
-				u->PushCmd(new Move(u->id, p));
+				struct unit *u2 = game_UnitAt(e->x, e->y);
+				if (u2 == nullptr || u == u2) {
+					u->PushCmd(new Move(u->id, p));
+				} else {
+					u->PushCmd(new Attack(u->id, u2->id));
+				}
 			}
 		}
 		break;
@@ -218,5 +228,5 @@ static struct unit *game_UnitAt (int x, int y)
 			return u;
 		}
 	}
-	return NULL;
+	return nullptr;
 }

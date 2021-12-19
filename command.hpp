@@ -15,7 +15,7 @@ public:
 
 class Move : public Command {
 	unitid_t uid;
-	struct point tar;
+	struct point target;
 	struct point mv;
 	angle_t a;
 public:
@@ -23,4 +23,16 @@ public:
 	void Apply (void) override;
 	void Halt (void) override;
 	Move (unitid_t uid, struct point tar);
+};
+
+class Attack : public Command {
+	unitid_t uid;
+	unitid_t target;
+	struct point mv;
+	unsigned int lastatktime;
+public:
+	bool Next (void) override;
+	void Apply (void) override;
+	void Halt (void) override;
+	Attack (unitid_t uid, unitid_t target);
 };

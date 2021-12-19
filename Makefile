@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++17 -Werror -Wall -Wpedantic $(shell pkg-config --cflags sdl2)
+CXXFLAGS = -std=c++17 -g -Werror -Wall -Wpedantic $(shell pkg-config --cflags sdl2)
 LIBS = -lm $(shell pkg-config --libs sdl2 SDL2_gfx)
 OUT = $(shell basename $(CURDIR))
 OBJ = main.o geometry.o draw.o state.o command.o game.o unit.o

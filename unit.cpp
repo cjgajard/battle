@@ -59,7 +59,6 @@ void unit::Draw ()
 	/* collision-hitbox */
 	{
 		struct point p, tmp, siz;
-
 		g = 0xFF;
 		if (flags & unit::SELECTED) {
 			r = b = 0;
@@ -108,7 +107,13 @@ void unit::Draw ()
 	{
 		SDL_Rect img;
 		unit_SpriteRect(this, &img);
-		draw_SetColor(0x80, 0x80, 0x80, 0xFF);
+		if (flags & unit::ATTACKING) {
+			g = b = 0;
+			r = 0xFF;
+		} else {
+			r = g = b = 0x80;
+		}
+		draw_SetColor(r, g, b, 0xFF);
 		SDL_RenderDrawRect(d_renderer, &img);
 	}
 	/* health bar */
@@ -137,6 +142,10 @@ void unit::Init (unitid_t _id)
 
 	maxspd = 1.0;
 	maxturnspd = M_PI / 128;
+	atkrange = 8;
+	atkspd = 500;
+	atkanimation = 200;
+	dmg = 10;
 
 	hp = maxhp = 100;
 
@@ -153,7 +162,7 @@ void unit::Update ()
 		return;
 	}
 	Command *c = Cmd();
-	if (c != NULL) {
+	if (c != nullptr) {
 		if (c->Next()) {
 			c->Apply();
 		} else {
@@ -163,9 +172,12 @@ void unit::Update ()
 	}
 	if (!(flags & unit::ACTIVE)) {
 		struct unit *u = ClosestEnemy();
-		if (u != NULL) {
+		if (u != nullptr) {
 			Turn(TurnNext(u->pos - pos));
 		}
+	}
+	if (hp <= 0) {
+		flags &= ~unit::ALIVE;
 	}
 }
 
@@ -205,6 +217,14 @@ angle_t unit::TurnNext (struct point v)
 		a.a = -maxturnspd;
 	}
 	return a;
+}
+
+void unit::Attack (struct unit *u)
+{
+	if (u == nullptr) {
+		return;
+	}
+	u->hp -= dmg;
 }
 
 void unit::Deselect ()
@@ -257,7 +277,7 @@ void unit::ToggleSelect ()
 
 struct unit *unit::ClosestEnemy ()
 {
-	struct unit *current = NULL;
+	struct unit *current = nullptr;
 	double min = 0;
 	for (int i = 0; i < g_unit_len; i++) {
 		struct unit *u = &g_unit[i];
@@ -271,7 +291,7 @@ struct unit *unit::ClosestEnemy ()
 			continue;
 		}
 		double d = abs(+(u->pos - pos));
-		if (current == NULL || d < min) {
+		if (current == nullptr || d < min) {
 			min = d;
 			current = u;
 		}
@@ -284,7 +304,7 @@ Command *unit::Cmd (void)
 	if (cmd_len > 0 && cmd_len <= unit_CMD_SIZ) {
 		return cmd[cmd_len - 1];
 	}
-	return NULL;
+	return nullptr;
 }
 
 void unit::PushCmd (Command *c)
@@ -307,11 +327,9 @@ void unit::PopCmd (void)
 
 void unit::ClearCmd (void)
 {
-	// Command *c;
-	// while ((c = Cmd()) != NULL)
 	while (cmd_len > 0) {
 		Command *c = Cmd();
-		if (c != NULL) {
+		if (c != nullptr) {
 			c->Halt();
 		}
 		PopCmd();
