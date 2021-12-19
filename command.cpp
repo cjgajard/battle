@@ -74,22 +74,9 @@ bool Attack::Next (void)
 		return false;
 	}
 	double distance = +(u2->pos - u->pos) - u->body.r - u2->body.r;
-	if (distance >= u->atkrange) {
-		mv = u->MoveNext(u2->pos);
-		for (int j = 0; j < g_unit_len; j++) {
-			struct unit *u3 = &g_unit[j];
-			if (u == u3) {
-				continue;
-			}
-			if (!(u3->flags & unit::ALIVE)) {
-				continue;
-			}
-			if (u->Collision(u3, mv)) {
-				return false;
-			}
-		}
-	} else {
-		mv = {0, 0};
+	if ((outofrange = distance >= u->atkrange)) {
+		mv.target = u2->pos;
+		return mv.Next();
 	}
 	return true;
 }
@@ -101,20 +88,18 @@ void Attack::Apply (void)
 	if (u == nullptr || u2 == nullptr) {
 		return;
 	}
-	if (isZero(mv)) {
-		if (g_time - lastatktime >= u->atkspd) {
-			u->flags |= unit::ATTACKING;
-			lastatktime = g_time;
-		}
-		if ((u->flags & unit::ATTACKING) && (g_time - lastatktime >= u->atkanimation)) {
-			u->Attack(u2);
-			u->flags &= ~unit::ATTACKING;
-		}
-	} else {
+	if (outofrange) {
 		u->flags &= ~unit::ATTACKING;
-		u->flags |= unit::MOVING;
-		u->Move(mv);
-		u->Turn(u->TurnNext(mv));
+		mv.Apply();
+		return;
+	}
+	if (g_time - lastatktime >= u->atkspd) {
+		u->flags |= unit::ATTACKING;
+		lastatktime = g_time;
+	}
+	if ((u->flags & unit::ATTACKING) && (g_time - lastatktime >= u->atkanimation)) {
+		u->Attack(u2);
+		u->flags &= ~unit::ATTACKING;
 	}
 }
 
@@ -130,4 +115,5 @@ Attack::Attack (unitid_t a, unitid_t b)
 	uid = a;
 	target = b;
 	lastatktime = g_time;
+	mv.uid = uid;
 }
