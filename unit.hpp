@@ -16,7 +16,9 @@ struct unit {
 	double dir, maxspd;
 	double maxturnspd;
 	double hp, maxhp;
-	double atkrange, atkspd, atkanimation, dmg;
+	double atkrange, atkdmg;
+	unsigned int atkspeed, atkduration, atktime;
+
 	struct point pos;
 	struct sprite spr;
 	struct circle body;

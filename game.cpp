@@ -51,9 +51,9 @@ int game_Init (void)
 
 		u.hp = u.maxhp = 400;
 		u.atkrange = 64;
-		u.atkspd = 1000;
-		u.atkanimation = 500;
-		u.dmg = 25;
+		u.atkspeed = 1000;
+		u.atkduration = 500;
+		u.atkdmg = 25;
 
 		g_unit[u.id] = u;
 		g_unit_len++;

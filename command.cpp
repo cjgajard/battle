@@ -93,13 +93,26 @@ void attack::Apply (void)
 		mv.Apply();
 		return;
 	}
-	if (g_time - lastatktime >= u->atkspd) {
-		u->flags |= unit::ATTACKING;
-		lastatktime = g_time;
-	}
-	if ((u->flags & unit::ATTACKING) && (g_time - lastatktime >= u->atkanimation)) {
+	u->flags |= unit::ATTACKING;
+	u->Turn(u->TurnNext(u2->pos - u->pos));
+	switch (state) {
+	case 0: /* animation */
+		u->atktime = g_time - lastatktime;
+		if (u->atktime >= u->atkduration) {
+			state = 1;
+		}
+		break;
+	case 1: /* attack */
 		u->Attack(u2);
-		u->flags &= ~unit::ATTACKING;
+		u->atktime = 0;
+		state = 2;
+		break;
+	case 2: /* cooldown */
+		if (g_time - lastatktime >= u->atkspeed) {
+			lastatktime = g_time;
+			state = 0;
+		}
+		break;
 	}
 }
 
@@ -108,6 +121,7 @@ void attack::Halt (void)
 	struct unit *u = &g_unit[uid];
 	u->flags &= ~unit::ATTACKING;
 	u->flags &= ~unit::MOVING;
+	u->atktime = 0;
 }
 
 attack::attack (unitid_t a, unitid_t b)
@@ -116,4 +130,5 @@ attack::attack (unitid_t a, unitid_t b)
 	target = b;
 	lastatktime = g_time;
 	mv.uid = uid;
+	state = 0;
 }

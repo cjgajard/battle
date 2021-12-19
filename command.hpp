@@ -29,6 +29,7 @@ struct attack : public command {
 	unitid_t uid;
 	unitid_t target;
 	unsigned int lastatktime;
+	int state;
 	bool outofrange;
 	struct move mv;
 

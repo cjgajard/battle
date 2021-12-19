@@ -103,7 +103,7 @@ void unit::Draw ()
 	{
 		SDL_Rect img;
 		unit_SpriteRect(this, &img);
-		if (flags & ATTACKING) {
+		if (atktime) {
 			g = b = 0;
 			r = 0xFF;
 		} else {
@@ -138,10 +138,12 @@ unit::unit ()
 
 	maxspd = 1.0;
 	maxturnspd = M_PI / 128;
+
 	atkrange = 8;
-	atkspd = 500;
-	atkanimation = 200;
-	dmg = 10;
+	atkspeed = 500;
+	atkduration = 200;
+	atkdmg = 10;
+	atktime = 0;
 
 	hp = maxhp = 100;
 
@@ -220,7 +222,7 @@ void unit::Attack (struct unit *u)
 	if (u == nullptr) {
 		return;
 	}
-	u->hp -= dmg;
+	u->hp -= atkdmg;
 }
 
 void unit::Deselect ()
