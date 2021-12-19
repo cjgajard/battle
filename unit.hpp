@@ -20,33 +20,21 @@ struct unit {
 	struct point pos;
 	struct sprite spr;
 	struct circle body;
-
 	Command *cmd[unit_CMD_SIZ];
 	int cmd_len = 0;
 
-	enum {
-		HERO      = 1 << 0,
-		ALIVE     = 1 << 1,
-		SELECTED  = 1 << 2,
-		MOVING    = 1 << 3,
-		ATTACKING = 1 << 4,
-	};
-	static const int ACTIVE = MOVING | ATTACKING;
+	unit ();
 
 	bool Collision (struct unit *u, struct point d);
 	bool UnderCursor (int x, int y);
-	void Close (void);
-	void Draw (void);
-	void Init (unitid_t id);
-	void Update (void);
 	struct unit *ClosestEnemy (void);
+	void Draw (void);
+	void Update (void);
 
 	void Move (struct point v);
 	struct point MoveNext (struct point t);
-
 	void Turn (angle_t delta);
 	angle_t TurnNext (struct point t);
-
 	void Attack (struct unit *u);
 
 	void Deselect (void);
@@ -58,4 +46,13 @@ struct unit {
 	void PushCmd (Command *c);
 	void PopCmd (void);
 	void ClearCmd (void);
+
+	enum {
+		HERO      = 1 << 0,
+		ALIVE     = 1 << 1,
+		SELECTED  = 1 << 2,
+		MOVING    = 1 << 3,
+		ATTACKING = 1 << 4,
+		ACTIVE = MOVING | ATTACKING,
+	};
 };

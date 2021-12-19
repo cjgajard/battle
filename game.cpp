@@ -21,44 +21,41 @@ int game_Init (void)
 
 	/* create heroes */
 	for (i = 0; i < unit_count; i++) {
-		unitid_t id = g_unit_id++;
-		struct unit *u = &g_unit[id];
-		u->Init(id);
+		struct unit u = unit();
+		u.flags |= unit::HERO;
+		u.pos.x = (i % GRID_LEN) * TILESIZ + TILESIZ / 2;
+		u.pos.y = (i / GRID_LEN) * TILESIZ + TILESIZ / 2;
+		g_unit[u.id] = u;
 		g_unit_len++;
-		u->pos.x = (i % GRID_LEN) * TILESIZ + TILESIZ / 2;
-		u->pos.y = (i / GRID_LEN) * TILESIZ + TILESIZ / 2;
 	}
 
 	/* create dragon */
 	{
-		unitid_t id = g_unit_id++;
-		struct unit *u = &g_unit[id];
-		u->id = id;
-		u->pos.x = GRID_LEN * TILESIZ / 2.0;
-		u->pos.y = GRID_LEN * TILESIZ / 2.0;
+		struct unit u = unit();
+		u.flags &= ~unit::HERO;
+		u.pos.x = GRID_LEN * TILESIZ / 2.0;
+		u.pos.y = GRID_LEN * TILESIZ / 2.0;
 
-		u->spr.x = 0;
-		u->spr.y = -24;
-		u->spr.w = 100;
-		u->spr.h = 100;
+		u.spr.x = 0;
+		u.spr.y = -24;
+		u.spr.w = 100;
+		u.spr.h = 100;
 
-		u->body.x = 0;
-		u->body.y = 0;
-		u->body.r = 32;
+		u.body.x = 0;
+		u.body.y = 0;
+		u.body.r = 32;
 
-		u->dir = -M_PI / 2;
-		u->maxspd = 0.2;
-		u->maxturnspd = M_PI / 128;
+		u.dir = -M_PI / 2;
+		u.maxspd = 0.2;
+		u.maxturnspd = M_PI / 128;
 
-		u->hp = u->maxhp = 400;
-		u->atkrange = 64;
-		u->atkspd = 1000;
-		u->atkanimation = 500;
-		u->dmg = 25;
-		u->cmd_len = 0;
+		u.hp = u.maxhp = 400;
+		u.atkrange = 64;
+		u.atkspd = 1000;
+		u.atkanimation = 500;
+		u.dmg = 25;
 
-		u->flags = unit::ALIVE;
-
+		g_unit[u.id] = u;
 		g_unit_len++;
 	}
 	return 0;
@@ -66,12 +63,6 @@ int game_Init (void)
 
 void game_Close (void)
 {
-	int i;
-	for (i = 0; i < g_unit_len; i++) {
-		struct unit *u;
-		u = &g_unit[i];
-		u->Close();
-	}
 	free(g_unit);
 }
 

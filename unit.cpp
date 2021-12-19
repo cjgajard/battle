@@ -46,21 +46,17 @@ bool unit::UnderCursor (int x, int y)
 	return (x >= r.x && x < r.x+r.w) && (y >= r.y && y < r.y+r.h);
 }
 
-void unit::Close ()
-{
-}
-
 void unit::Draw ()
 {
 	unsigned char r, g, b;
-	if (!(flags & unit::ALIVE)) {
+	if (!(flags & ALIVE)) {
 		return;
 	}
 	/* collision-hitbox */
 	{
 		struct point p, tmp, siz;
 		g = 0xFF;
-		if (flags & unit::SELECTED) {
+		if (flags & SELECTED) {
 			r = b = 0;
 		} else {
 			r = b = 0xFF;
@@ -89,7 +85,7 @@ void unit::Draw ()
 		struct point start, end;
 
 		g = 0xFF;
-		if (flags & unit::SELECTED) {
+		if (flags & SELECTED) {
 			r = b = 0;
 		} else {
 			r = b = 0xFF;
@@ -107,7 +103,7 @@ void unit::Draw ()
 	{
 		SDL_Rect img;
 		unit_SpriteRect(this, &img);
-		if (flags & unit::ATTACKING) {
+		if (flags & ATTACKING) {
 			g = b = 0;
 			r = 0xFF;
 		} else {
@@ -129,9 +125,9 @@ void unit::Draw ()
 	}
 }
 
-void unit::Init (unitid_t _id)
+unit::unit ()
 {
-	id = _id;
+	id = g_unit_id++;
 	pos.x = 0;
 	pos.y = 0;
 
@@ -153,12 +149,12 @@ void unit::Init (unitid_t _id)
 	body.y = 0;
 	body.r = 8;
 
-	flags = unit::HERO | unit::ALIVE;
+	flags = ALIVE;
 }
 
 void unit::Update ()
 {
-	if (!(flags & unit::ALIVE)) {
+	if (!(flags & ALIVE)) {
 		return;
 	}
 	Command *c = Cmd();
@@ -170,14 +166,14 @@ void unit::Update ()
 			PopCmd();
 		}
 	}
-	if (!(flags & unit::ACTIVE)) {
+	if (!(flags & ACTIVE)) {
 		struct unit *u = ClosestEnemy();
 		if (u != nullptr) {
 			Turn(TurnNext(u->pos - pos));
 		}
 	}
 	if (hp <= 0) {
-		flags &= ~unit::ALIVE;
+		flags &= ~ALIVE;
 	}
 }
 
@@ -237,7 +233,7 @@ void unit::Deselect ()
 			continue;
 		}
 		if (g_selection[i] == id) {
-			g_unit[id].flags &= ~unit::SELECTED;
+			g_unit[id].flags &= ~SELECTED;
 			found = true;
 		}
 	}
@@ -250,7 +246,7 @@ void unit::DeselectAll (void)
 {
 	int i;
 	for (i = 0; i < g_selection_len; i++) {
-		g_unit[g_selection[i]].flags &= ~unit::SELECTED;
+		g_unit[g_selection[i]].flags &= ~SELECTED;
 	}
 	g_selection_len = 0;
 }
@@ -263,12 +259,12 @@ void unit::Select ()
 		return;
 	}
 	g_selection[g_selection_len++] = id;
-	flags |= unit::SELECTED;
+	flags |= SELECTED;
 }
 
 void unit::ToggleSelect ()
 {
-	if (flags & unit::SELECTED) {
+	if (flags & SELECTED) {
 		Deselect();
 		return;
 	}
@@ -284,10 +280,10 @@ struct unit *unit::ClosestEnemy ()
 		if (this == u) {
 			continue;
 		}
-		if (!(u->flags & unit::ALIVE)) {
+		if (!(u->flags & ALIVE)) {
 			continue;
 		}
-		if (!((flags & unit::HERO) ^ (u->flags & unit::HERO))) {
+		if (!((flags & HERO) ^ (u->flags & HERO))) {
 			continue;
 		}
 		double d = abs(+(u->pos - pos));
