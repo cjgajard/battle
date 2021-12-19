@@ -56,13 +56,6 @@ void unit::Draw ()
 	if (!(flags & unit::ALIVE)) {
 		return;
 	}
-	/* sprite box */
-	{
-		SDL_Rect img;
-		unit_SpriteRect(this, &img);
-		draw_SetColor(0x80, 0x80, 0x80, 0xFF);
-		SDL_RenderDrawRect(d_renderer, &img);
-	}
 	/* collision-hitbox */
 	{
 		struct point p, tmp, siz;
@@ -111,6 +104,24 @@ void unit::Draw ()
 		draw_SetColor(r, g, b, 0xFF);
 		SDL_RenderDrawLine(d_renderer, start.x, start.y, end.x, end.y);
 	}
+	/* sprite box */
+	{
+		SDL_Rect img;
+		unit_SpriteRect(this, &img);
+		draw_SetColor(0x80, 0x80, 0x80, 0xFF);
+		SDL_RenderDrawRect(d_renderer, &img);
+	}
+	/* health bar */
+	{
+		SDL_Rect bar;
+		double x = hp / maxhp;
+		unit_SpriteRect(this, &bar);
+		bar.h = 4;
+		bar.y -= 2 * bar.h;
+		bar.w *= x;
+		draw_SetColor((1 - x) * 0xFF, x * 0xFF, 0, 0xFF);
+		SDL_RenderFillRect(d_renderer, &bar);
+	}
 }
 
 void unit::Init (unitid_t _id)
@@ -126,6 +137,8 @@ void unit::Init (unitid_t _id)
 
 	maxspd = 1.0;
 	maxturnspd = M_PI / 128;
+
+	hp = maxhp = 100;
 
 	body.x = 0;
 	body.y = 0;

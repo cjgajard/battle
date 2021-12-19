@@ -15,6 +15,7 @@ struct unit {
 	unsigned int flags;
 	double dir, maxspd;
 	double maxturnspd;
+	double hp, maxhp;
 	struct point pos;
 	struct sprite spr;
 	struct circle body;

@@ -50,6 +50,8 @@ int game_Init (void)
 		u->maxspd = 0.2;
 		u->maxturnspd = M_PI / 128;
 
+		u->hp = u->maxhp = 400;
+
 		u->flags = unit::ALIVE;
 
 		g_unit_len++;
