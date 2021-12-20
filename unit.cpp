@@ -136,8 +136,12 @@ unit::unit ()
 	spr.w = 32;
 	spr.h = 48;
 
+	body.x = 0;
+	body.y = 0;
+	body.r = 8;
+
 	maxspd = 1.0;
-	maxturnspd = M_PI / 128;
+	maxturnspd = M_PI / (4 * body.r);
 
 	atkrange = 8;
 	atkspeed = 500;
@@ -146,10 +150,6 @@ unit::unit ()
 	atktime = 0;
 
 	hp = maxhp = 100;
-
-	body.x = 0;
-	body.y = 0;
-	body.r = 8;
 
 	flags = ALIVE;
 }

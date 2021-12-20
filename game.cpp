@@ -47,7 +47,7 @@ int game_Init (void)
 
 		u.dir = -M_PI / 2;
 		u.maxspd = 0.2;
-		u.maxturnspd = M_PI / 128;
+		u.maxturnspd = M_PI / (4 * u.body.r);
 
 		u.hp = u.maxhp = 400;
 		u.atkrange = 64;
@@ -78,13 +78,11 @@ void game_Update (void)
 
 void game_Draw (double delta)
 {
-	int i;
-
 	SDL_SetRenderDrawBlendMode(d_renderer, SDL_BLENDMODE_NONE);
 	draw_SetColor(0, 0, 0, 0xFF);
 	SDL_RenderClear(d_renderer);
 
-	for (i = 0; i <= GRID_LEN; i++) {
+	for (int i = 0; i <= GRID_LEN; i++) {
 		struct point a, b;
 		a.x = b.x = i * TILESIZ;
 		b.y = GRID_LEN * TILESIZ;
@@ -94,7 +92,7 @@ void game_Draw (double delta)
 		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
-	for (i = 0; i <= GRID_LEN; i++) {
+	for (int i = 0; i <= GRID_LEN; i++) {
 		struct point a, b;
 		a.y = b.y = i * TILESIZ;
 		b.x = GRID_LEN * TILESIZ;
@@ -104,11 +102,9 @@ void game_Draw (double delta)
 		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
-
-	for (i = 0; i < g_unit_len; i++) {
+	for (int i = 0; i < g_unit_len; i++) {
 		g_unit[i].Draw();
 	}
-
 	SDL_RenderPresent(d_renderer);
 }
 
