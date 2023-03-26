@@ -1,10 +1,15 @@
-#include "command.hpp"
-#include "config.hpp"
-#include "draw.hpp"
-#include "game.hpp"
-#include "geometry.hpp"
-#include "state.hpp"
-#include "unit.hpp"
+#include "battle.h"
+#include "draw.h"
+
+unsigned g_pause = 0;
+unsigned int g_time = 0;
+
+struct unit g_unit[G_UNIT_SIZ];
+int g_unit_len;
+unitid_t g_unit_id = 0;
+
+unitid_t g_selection[G_SELECTION_SIZ] = {0};
+int g_selection_len = 0;
 
 static struct unit *game_UnitAt (int x, int y);
 static struct point projection_XY (int x, int y);
@@ -16,23 +21,23 @@ int game_Init (void)
 {
 	int i, unit_count;
 	unit_count = 2;
-	g_unit_size = G_UNIT_INITSIZ;
-	g_unit = (struct unit*)malloc(sizeof(*g_unit) * g_unit_size);
 
 	/* create heroes */
 	for (i = 0; i < unit_count; i++) {
-		struct unit u = unit();
-		u.flags |= unit::HERO;
-		u.pos.x = (i % GRID_LEN) * TILESIZ + TILESIZ / 2;
-		u.pos.y = (i / GRID_LEN) * TILESIZ + TILESIZ / 2;
+		struct unit u;
+		unit_init(&u);
+		u.flags |= UNIT_HERO;
+		u.pos.x = (i % GRID_LEN) * 2 * TILESIZ + TILESIZ / 2;
+		u.pos.y = (i / GRID_LEN) * TILESIZ + 4 * TILESIZ;
 		g_unit[u.id] = u;
 		g_unit_len++;
 	}
 
 	/* create dragon */
 	{
-		struct unit u = unit();
-		u.flags &= ~unit::HERO;
+		struct unit u;
+		unit_init(&u);
+		u.flags &= ~UNIT_HERO;
 		u.pos.x = GRID_LEN * TILESIZ / 2.0;
 		u.pos.y = GRID_LEN * TILESIZ / 2.0;
 
@@ -63,47 +68,57 @@ int game_Init (void)
 
 void game_Close (void)
 {
-	free(g_unit);
 }
 
 void game_Update (void)
 {
+	int i;
 	if (g_pause) {
 		return;
 	}
-	for (int i = 0; i < g_unit_len; i++) {
-		g_unit[i].Update();
+	for (i = 0; i < g_unit_len; i++) {
+		unit_update(&g_unit[i]);
+	}
+}
+
+static void draw_SetColor (int r, int g, int b, int a)
+{
+	if (g_pause) {
+		SDL_SetRenderDrawColor(d_renderer, 0xFF - r, 0xFF - g, 0xFF - b, a);
+	} else {
+		SDL_SetRenderDrawColor(d_renderer, r, g, b, a);
 	}
 }
 
 void game_Draw (double delta)
 {
+	int i;
 	SDL_SetRenderDrawBlendMode(d_renderer, SDL_BLENDMODE_NONE);
 	draw_SetColor(0, 0, 0, 0xFF);
 	SDL_RenderClear(d_renderer);
 
-	for (int i = 0; i <= GRID_LEN; i++) {
+	for (i = 0; i <= GRID_LEN; i++) {
 		struct point a, b;
 		a.x = b.x = i * TILESIZ;
 		b.y = GRID_LEN * TILESIZ;
 		a.y = 0;
-		a = a * PROJ + ORIGIN;
-		b = b * PROJ + ORIGIN;
+		a = point_add(projection_of(PROJ, a), ORIGIN);
+		b = point_add(projection_of(PROJ, b), ORIGIN);
 		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
-	for (int i = 0; i <= GRID_LEN; i++) {
+	for (i = 0; i <= GRID_LEN; i++) {
 		struct point a, b;
 		a.y = b.y = i * TILESIZ;
 		b.x = GRID_LEN * TILESIZ;
 		a.x = 0;
-		a = a * PROJ + ORIGIN;
-		b = b * PROJ + ORIGIN;
+		a = point_add(projection_of(PROJ, a), ORIGIN);
+		b = point_add(projection_of(PROJ, b), ORIGIN);
 		draw_SetColor(0x40, 0x40, 0x40, 0xFF);
 		SDL_RenderDrawLine(d_renderer, a.x, a.y, b.x, b.y);
 	}
-	for (int i = 0; i < g_unit_len; i++) {
-		g_unit[i].Draw();
+	for (i = 0; i < g_unit_len; i++) {
+		unit_draw(&g_unit[i]);
 	}
 	SDL_RenderPresent(d_renderer);
 }
@@ -144,8 +159,8 @@ void game_OnKeyup (void *event)
 			int i;
 			for (i = 0; i < g_selection_len; i++) {
 				struct unit *u = &g_unit[g_selection[i]];
-				if (u != nullptr) {
-					u->ClearCmd();
+				if (u != NULL) {
+					unit_cmd_clear(u);
 				}
 			}
 		}
@@ -163,12 +178,13 @@ void game_OnRelease (void *event)
 	switch (e->button) {
 	case SDL_BUTTON_LEFT:
 		{
+			struct unit *u;
 			if (!(keymod & KMOD_CTRL)) {
-				unit::DeselectAll();
+				unit_select_none();
 			}
-			struct unit *u = game_UnitAt(e->x, e->y);
-			if (u != nullptr) {
-				u->ToggleSelect();
+			u = game_UnitAt(e->x, e->y);
+			if (u != NULL) {
+				unit_select_toggle(u);
 			}
 		}
 		break;
@@ -176,20 +192,21 @@ void game_OnRelease (void *event)
 		{
 			int i;
 			for (i = 0; i < g_selection_len; i++) {
+				struct point p;
+				struct unit *u2;
 				struct unit *u = &g_unit[g_selection[i]];
-				/* TODO: interact with map to get terrain
-				 * elevation */
 				/* TODO: find a path to target before moving */
-				if (u == nullptr) {
-					continue;
-				}
-				u->ClearCmd();
-				struct point p = projection_XY(e->x, e->y);
-				struct unit *u2 = game_UnitAt(e->x, e->y);
-				if (u2 == nullptr || u == u2) {
-					u->PushCmd(new move(u->id, p));
+				unit_cmd_clear(u);
+				p = projection_XY(e->x, e->y);
+				u2 = game_UnitAt(e->x, e->y);
+				if (u2 == NULL || u == u2) {
+					struct command cmd;
+					command_move_init(&cmd, u->id, p);
+					unit_cmd_push(u, cmd);
 				} else {
-					u->PushCmd(new attack(u->id, u2->id));
+					struct command cmd;
+					command_attack_init(&cmd, u->id, u2->id);
+					unit_cmd_push(u, cmd);
 				}
 			}
 		}
@@ -200,9 +217,10 @@ void game_OnRelease (void *event)
 static struct point projection_XY (int x, int y)
 {
 	struct point tmp;
+	/* TODO: interact with map to get terrain elevation */
 	tmp.x = x - ORIGIN.x;
 	tmp.y = y - ORIGIN.y;
-	return tmp * PROJ_INV;
+	return projection_of(PROJ_INV, tmp);
 }
 
 static struct unit *game_UnitAt (int x, int y)
@@ -211,9 +229,9 @@ static struct unit *game_UnitAt (int x, int y)
 	/* TODO: that search should be in a list sorted by Y position */
 	for (i = 0; i < g_unit_len; i++) {
 		struct unit *u = &g_unit[i];
-		if (u->UnderCursor(x, y)) {
+		if (unit_under_cursor(u, x, y)) {
 			return u;
 		}
 	}
-	return nullptr;
+	return NULL;
 }

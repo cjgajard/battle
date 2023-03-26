@@ -1,11 +1,10 @@
-#include "draw.hpp"
-#include "geometry.hpp"
-#include "state.hpp"
+#include "battle.h"
+#include "draw.h"
 
 SDL_Renderer *d_renderer;
 SDL_Window *d_window;
 
-int draw_Init (void)
+int draw_init (void)
 {
 	if (SDL_Init(SDL_INIT_VIDEO)) {
 		fprintf(stderr, "Cannot initialize SDL\n");
@@ -14,17 +13,17 @@ int draw_Init (void)
 	}
 
 	d_window = SDL_CreateWindow(
-		"Title", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		"Battle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		g_width, g_height, SDL_WINDOW_SHOWN
 	);
-	if (d_window == nullptr) {
+	if (d_window == NULL) {
 		fprintf(stderr, "Window could not be created\n");
 		fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
 		return 2;
 	}
 
 	d_renderer = SDL_CreateRenderer(d_window, -1, SDL_RENDERER_ACCELERATED);
-	if (d_renderer == nullptr) {
+	if (d_renderer == NULL) {
 		fprintf(stderr, "Renderer could not be created\n");
 		fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError());
 		return 3;
@@ -35,22 +34,13 @@ int draw_Init (void)
 	return 0;
 }
 
-void draw_Update (void)
+void draw_update (void)
 {
 }
 
-void draw_Close (void)
+void draw_close (void)
 {
 	SDL_DestroyRenderer(d_renderer);
 	SDL_DestroyWindow(d_window);
 	SDL_Quit();
-}
-
-void draw_SetColor (int r, int g, int b, int a)
-{
-	if (!g_pause) {
-		SDL_SetRenderDrawColor(d_renderer, r, g, b, a);
-		return;
-	}
-	SDL_SetRenderDrawColor(d_renderer, 0xFF - r, 0xFF - g, 0xFF - b, a);
 }

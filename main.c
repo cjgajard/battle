@@ -1,9 +1,6 @@
-#include <SDL.h>
 #include <time.h>
-#include "config.hpp"
-#include "draw.hpp"
-#include "game.hpp"
-#include "state.hpp"
+#include "battle.h"
+#include "draw.h"
 
 int g_width, g_height;
 int g_maxfps;
@@ -26,7 +23,7 @@ int main (int argc, char *argv[])
 
 	srand(time(NULL));
 
-	if (draw_Init()) {
+	if (draw_init()) {
 		fprintf(stderr, "draw_Init: %s\n", SDL_GetError());
 		err = 1;
 		goto close;
@@ -47,7 +44,7 @@ int main (int argc, char *argv[])
 		 * increments for better syncronization. */
 		if (g_lag >= g_updatetime) {
 			game_Update();
-			draw_Update();
+			draw_update();
 			g_lag -= g_updatetime;
 			continue;
 		}
@@ -96,6 +93,6 @@ int main (int argc, char *argv[])
 	}
 close:
 	game_Close();
-	draw_Close();
+	draw_close();
 	return err;
 }

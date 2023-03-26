@@ -1,18 +1,16 @@
-CXXFLAGS = -std=c++17 -g -Werror -Wall -Wpedantic $(shell pkg-config --cflags sdl2)
+CFLAGS = -ansi -g -Werror -Wall -Wpedantic $(shell pkg-config --cflags sdl2)
 LIBS = -lm $(shell pkg-config --libs sdl2 SDL2_gfx)
-OUT = $(shell basename $(CURDIR))
-OBJ = main.o geometry.o draw.o state.o command.o game.o unit.o
 
-.PHONY: clean Makeobjects
+a.out: main.o geometry.o draw_sdl.o command.o game.o unit.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-$(OUT): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
-
+.PHONY: clean
 clean:
 	-$(RM) *.o
 	-$(RM) $(OUT)
 
+.PHONY: Makeobjects
 Makeobjects:
-	find . -name '*.cpp' -exec $(CXX) -MM {} \; >$@
+	find . -name '*.c' -exec $(CC) -MM {} \; >$@
 
 include Makeobjects
