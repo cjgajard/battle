@@ -1,5 +1,7 @@
 #ifndef BATTLE_H
 #define BATTLE_H
+#include <stdio.h>
+
 typedef unsigned long unitid_t;
 
 typedef double angle_t;
@@ -76,7 +78,6 @@ angle_t      point_get_angle (struct point p);
 double       point_get_value (struct point p);
 struct point point_add       (struct point p, struct point other);
 struct point point_sub       (struct point p, struct point other);
-#include <stdio.h>
 void         point_fprint    (FILE *f, struct point p);
 
 angle_t angle_sub (angle_t a, angle_t other);
